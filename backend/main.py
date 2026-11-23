@@ -1,7 +1,11 @@
 from typing import List
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
-
+try:
+    from optical_parser import parse_optical_csv
+except ImportError:
+    from backend.optical_parser import parse_optical_csv
+    
 app = FastAPI(title="AdimPlan EdTech Analytics API", version="0.1.0")
 
 
@@ -49,3 +53,12 @@ def analyze_exam(payload: ExamAnalysisRequest):
         "recommended_focus_topic": weakest_topic["topic_name"],
         "weakest_topic_details": weakest_topic,
     }
+
+class OpticalCsvImportRequest(BaseModel):
+    csv_text: str
+
+@app.post("/api/import-optical-csv")
+def import_optical_csv(payload: OpticalCsvImportRequest):
+    if not payload.csv_text or not payload.csv_text.strip():
+      raise HTTPException(status_code=400, detail="csv_text is required.")
+return parse_optical_csv(payload.csv_text)
