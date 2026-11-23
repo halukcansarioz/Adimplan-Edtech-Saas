@@ -102,3 +102,36 @@ def test_optical_parser_to_json():
     assert parsed["valid_count"] == 1
     assert parsed["records"][0]["net"] == 7.0
     assert parsed["records"][0]["mastery_pct"] == 35.0
+
+def test_import_optical_csv_success():
+    csv_data = "student_name,subject,topic,correct,wrong,empty\nAli Yilmaz,Matematik,Turev,6,4,0\nAyse Demir,Fizik,Optik,4,0,6\n"
+    response = client.post("/api/import-optical-csv", json={"csv_text": csv_data})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total_rows"] == 2
+    assert data["valid_count"] == 2
+    assert data["error_count"] == 0
+    assert data["summary"]["average_net"] == 4.5
+
+
+def test_parent_report_success():
+    payload = {
+        "student_name": "Ali Yilmaz",
+        "exam_type": "YKS",
+        "completed_tasks": 8,
+        "total_tasks": 10,
+        "last_net": 52.5,
+        "focus_minutes": 180,
+        "study_streak": 5,
+        "mood": "normal",
+        "weak_topics": ["Turev", "Optik"],
+    }
+    response = client.post("/api/parent-report", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["risk_level"] in ("normal", "medium", "high")
+    assert isinstance(data["weekly_actions"], list)
+    assert len(data["weekly_actions"]) == 3
+    assert isinstance(data["report_text"], str)
+    assert len(data["report_text"]) > 0
+    
