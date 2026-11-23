@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: adimplan-api
+    runtime: docker
+    region: frankfurt
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: SUPABASE_URL
+        value: https://mkimvsmlxassitajminz.supabase.co
