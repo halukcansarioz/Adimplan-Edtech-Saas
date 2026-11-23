@@ -33,10 +33,10 @@ def test_analyze_exam_success():
     assert data["exam_name"] == "TYT Deneme 1"
     assert data["total_net"] == 9.0
     assert data["recommended_focus_topic"] == "İntegral"
-    assert data["weakest_topic_details"]["mastery_pct"] == 20.0
+    assert data["weakest_topic_details"]["mastery_percentage"] == 20.0
     assert len(data["topics"]) == 2
     assert data["topics"][0]["net"] == 7.0
-    assert data["topics"][0]["mastery_pct"] == 58.33
+    assert data["topics"][0]["mastery_percentage"] == 58.33
 
 
 def test_analyze_exam_empty_topics():
