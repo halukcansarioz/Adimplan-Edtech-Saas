@@ -61,7 +61,7 @@ class OpticalCsvImportRequest(BaseModel):
 def import_optical_csv(payload: OpticalCsvImportRequest):
     if not payload.csv_text or not payload.csv_text.strip():
       raise HTTPException(status_code=400, detail="csv_text is required.")
-return parse_optical_csv(payload.csv_text)
+    return parse_optical_csv(payload.csv_text)
 
 class ParentReportRequest(BaseModel):
     student_name: str = Field(..., min_length=1)
