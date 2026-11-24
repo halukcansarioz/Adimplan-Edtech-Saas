@@ -1,13 +1,53 @@
-from typing import List
-from fastapi import FastAPI, HTTPException
+from typing import List, Dict
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
+import hashlib
+import json
+import os
+import time
+from collections import defaultdict
 try:
     from optical_parser import parse_optical_csv
 except ImportError:
     from backend.optical_parser import parse_optical_csv
     
 app = FastAPI(title="İvme Akademi EdTech Analytics API", version="0.1.0")
+SENTRY_DSN = os.getenv("SENTRY_DSN")
+if SENTRY_DSN:
+    try:
+        import sentry_sdk
+        sentry_sdk.init(dsn=SENTRY_DSN, traces_sample_rate=0.1)
+    except ImportError:
+        pass
 
+RATE_LIMIT_REQUESTS = 60
+RATE_LIMIT_WINDOW_SECONDS = 60
+_rate_limit_store: Dict[str, List[float]] = defaultdict(list)
+_response_cache: Dict[str, dict] = {}
+
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.time()
+    window_start = now - RATE_LIMIT_WINDOW_SECONDS
+    timestamps = [ts for ts in _rate_limit_store[client_ip] if ts > window_start]
+    if len(timestamps) >= RATE_LIMIT_REQUESTS:
+        _rate_limit_store[client_ip] = timestamps
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Rate limit exceeded."},
+        )
+    timestamps.append(now)
+    _rate_limit_store[client_ip] = timestamps
+    return await call_next(request)
+
+
+def _make_cache_key(prefix: str, payload: BaseModel) -> str:
+    raw = json.dumps(payload.model_dump(), sort_keys=True, ensure_ascii=False)
+    return hashlib.sha256(f"{prefix}:{raw}".encode("utf-8")).hexdigest()
+    
 
 class TopicResult(BaseModel):
     topic_name: str = Field(..., min_length=1)
@@ -30,6 +70,9 @@ def health_check():
 def analyze_exam(payload: ExamAnalysisRequest):
     if not payload.topics:
         raise HTTPException(status_code=400, detail="At least one topic is required.")
+    cache_key = _make_cache_key("analyze_exam", payload)
+    if cache_key in _response_cache:
+        return {**_response_cache[cache_key], "cached": True}
     analyzed_topics = []
     total_net = 0.0
     for item in payload.topics:
@@ -46,13 +89,15 @@ def analyze_exam(payload: ExamAnalysisRequest):
             "mastery_percentage": mastery_pct,
         })
     weakest_topic = min(analyzed_topics, key=lambda x: x["mastery_percentage"])
-    return {
+    result = {
         "exam_name": payload.exam_name,
         "total_net": round(total_net, 2),
         "topics": analyzed_topics,
         "recommended_focus_topic": weakest_topic["topic_name"],
         "weakest_topic_details": weakest_topic,
     }
+    _response_cache[cache_key] = result
+    return {**result, "cached": False}
 
 class OpticalCsvImportRequest(BaseModel):
     csv_text: str
@@ -77,6 +122,9 @@ class ParentReportRequest(BaseModel):
 
 @app.post("/api/parent-report")
 def generate_parent_report(payload: ParentReportRequest):
+    cache_key = _make_cache_key("parent_report", payload)
+    if cache_key in _response_cache:
+        return {**_response_cache[cache_key], "cached": True}
     completion_rate = (
         round((payload.completed_tasks / payload.total_tasks) * 100, 1)
         if payload.total_tasks > 0
@@ -150,7 +198,7 @@ def generate_parent_report(payload: ParentReportRequest):
         f"3. {weekly_actions[2]}"
     )
 
-    return {
+    result = {
         "student_name": payload.student_name,
         "exam_type": payload.exam_type,
         "completion_rate": completion_rate,
@@ -158,3 +206,5 @@ def generate_parent_report(payload: ParentReportRequest):
         "weekly_actions": weekly_actions,
         "report_text": report_text,
     }
+    _response_cache[cache_key] = result
+    return {**result, "cached": False}
