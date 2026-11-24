@@ -1,4 +1,4 @@
-# 🎓 AdımPlan EdTech SaaS
+# 🚀 İvme Akademi — EdTech Coaching SaaS
 
 [![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
@@ -27,7 +27,7 @@ Multi-tenant EdTech coaching and student tracking SaaS starter featuring **Supab
 
 # 📌 About the Project
 
-**AdımPlan EdTech SaaS** is a full-stack educational coaching platform designed for multi-tenant institutions, coaches, students, and parents. It combines strict database-level tenant isolation via Supabase PostgreSQL RLS (`supabase/migrations/001_initial_schema_rls.sql`), high-performance REST endpoints in FastAPI (`backend/main.py`), automated optical exam CSV ingestion (`backend/optical_parser.py`), and a 6-module interactive frontend MVP.
+**İvme Akademi EdTech SaaS** is a full-stack educational coaching platform designed for multi-tenant institutions, coaches, students, and parents. It combines strict database-level tenant isolation via Supabase PostgreSQL RLS (`supabase/migrations/001_initial_schema_rls.sql`), high-performance REST endpoints in FastAPI (`backend/main.py`), automated optical exam CSV ingestion (`backend/optical_parser.py`), and a 6-module interactive frontend MVP.
 
 ---
 
