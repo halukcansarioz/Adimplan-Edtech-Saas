@@ -87,6 +87,7 @@ create table if not exists public.daily_mood_logs (
   notes text,
   created_at timestamptz not null default now(),
   unique (tenant_id, student_id, log_date)
+);
 
 create table if not exists public.book_progress (
   id uuid primary key default gen_random_uuid(),
