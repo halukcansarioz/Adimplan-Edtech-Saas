@@ -135,3 +135,37 @@ def test_parent_report_success():
     assert isinstance(data["report_text"], str)
     assert len(data["report_text"]) > 0
     
+def test_response_caching():
+    exam_payload = {
+        "exam_name": "Cache Test Deneme",
+        "topics": [
+            {"topic_name": "Matematik", "correct": 30, "wrong": 4, "empty": 6},
+        ],
+    }
+    first_exam = client.post("/api/analyze-exam", json=exam_payload)
+    assert first_exam.status_code == 200
+    assert first_exam.json()["cached"] is False
+
+    second_exam = client.post("/api/analyze-exam", json=exam_payload)
+    assert second_exam.status_code == 200
+    assert second_exam.json()["cached"] is True
+
+    parent_payload = {
+        "student_name": "Zeynep Kaya",
+        "exam_type": "YKS",
+        "completed_tasks": 7,
+        "total_tasks": 10,
+        "last_net": 60.0,
+        "focus_minutes": 200,
+        "study_streak": 4,
+        "mood": "normal",
+        "weak_topics": ["Optik"],
+    }
+    first_parent = client.post("/api/parent-report", json=parent_payload)
+    assert first_parent.status_code == 200
+    assert first_parent.json()["cached"] is False
+
+    second_parent = client.post("/api/parent-report", json=parent_payload)
+    assert second_parent.status_code == 200
+    assert second_parent.json()["cached"] is True
+    
