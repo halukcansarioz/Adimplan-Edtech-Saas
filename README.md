@@ -36,7 +36,10 @@ Multi-tenant EdTech coaching and student tracking SaaS starter featuring **Supab
 - ✅ **1. Weekly Schedule & PDF** — Interactive weekly study planner with structured time blocks and printable PDF export.
 - ✅ **2. Mock Exam Trend & Heatmap** — Subject-level net score progression charts and topic mastery heatmaps.
 - ✅ **3. Leitner Mistake Vault** — Spaced-repetition mistake tracking system to organize and review missed exam questions.
-- ✅ **4. Pomodoro & RSVP Speed Reading** — Built-in Pomodoro focus timer paired with a Rapid Serial Visual Presentation (RSVP) speed-reading trainer.
+- ✅ **Landscape PDF & Image Leitner Cards** – Landscape weekly schedule PDF export (yatay PDF) and image-supported Leitner mistake cards (görselli Leitner kartı).
+- ✅ **Shareable Parent Link (`#veli=`) & Web Notifications** – Instant parent report sharing via `#veli=` URL hash and browser Web Notification session alerts.
+- ✅ **Institution Logo, `.dat` Optical Parser & KVKK Reset** – Custom institution logo URL support, `.dat` optical reader file parsing, and one-click KVKK local data reset.
+ - ✅ **4. Pomodoro & RSVP Speed Reading** — Built-in Pomodoro focus timer paired with a Rapid Serial Visual Presentation (RSVP) speed-reading trainer.
 - ✅ **5. Parent Report & Messages** — Automated student progress reports and direct coach-parent communication.
 - ✅ **6. Institutional Panel & Optical CSV Import** — Multi-tenant institutional management dashboard with bulk optical reader CSV exam ingestion via `backend/optical_parser.py`.
 
@@ -85,7 +88,9 @@ uvicorn main:app --reload
 cd backend
 pytest
 ```
-
+### 5. Standalone Website Deployment
+- **Vercel:** Import the repository on Vercel and set **Root Directory** to `frontend` to deploy the standalone web application.
+- **Render Blueprint (One-Click Setup):** Connect the repository via Render Blueprint (`render.yaml`) to deploy both `adimplan-web` (static frontend from `./frontend`) and `adimplan-api` (FastAPI backend) together in one click.
 ---
 
 # 📁 Project Structure
