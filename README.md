@@ -11,7 +11,7 @@
 
 Multi-tenant EdTech coaching and student tracking SaaS starter featuring **Supabase PostgreSQL Row-Level Security (RLS)**, a **FastAPI** analytics backend, an **Optical CSV Parser**, and an interactive 6-module MVP.
 
-> 🚀 **Live Demo:** **[https://halukcansarioz.github.io/adimplan/](https://halukcansarioz.github.io/adimplan/)**
+> 🚀 **Live Demo:** **[https://adimplan.vercel.app/](https://adimplan.vercel.app/)**
 
 ---
 
