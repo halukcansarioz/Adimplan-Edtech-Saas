@@ -18,7 +18,12 @@ def _parse_non_negative_int(value: Any, field_name: str) -> int:
         raise ValueError(f"Negative value for '{field_name}': {parsed}")
     return parsed
 
-
+def _detect_delimiter(csv_content: str) -> str:
+    first_line = next((line for line in csv_content.splitlines() if line.strip()), "")
+    counts = {d: first_line.count(d) for d in (",", ";", "|")}
+    best = max((",", ";", "|"), key=lambda d: counts[d])
+    return best if counts[best] > 0 else ","
+    
 def parse_optical_csv(csv_content: str) -> Dict[str, Any]:
     if not csv_content or not csv_content.strip():
         return {
@@ -33,7 +38,7 @@ def parse_optical_csv(csv_content: str) -> Dict[str, Any]:
             },
         }
 
-    reader = csv.DictReader(io.StringIO(csv_content.strip()))
+    reader = csv.DictReader(io.StringIO(csv_content.strip()), delimiter=_detect_delimiter(csv_content))
     fieldnames = [col.strip() for col in (reader.fieldnames or []) if col]
     missing_columns = [col for col in REQUIRED_COLUMNS if col not in fieldnames]
     if missing_columns:
