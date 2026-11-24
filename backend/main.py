@@ -6,7 +6,7 @@ try:
 except ImportError:
     from backend.optical_parser import parse_optical_csv
     
-app = FastAPI(title="AdimPlan EdTech Analytics API", version="0.1.0")
+app = FastAPI(title="İvme Akademi EdTech Analytics API", version="0.1.0")
 
 
 class TopicResult(BaseModel):
@@ -137,7 +137,7 @@ def generate_parent_report(payload: ParentReportRequest):
     weekly_actions = [action_1, action_2, action_3]
 
     report_text = (
-        f"ADIMLIO HAFTALIK VELI BILGILENDIRME RAPORU\n"
+        f"İVME AKADEMİ HAFTALIK VELI BILGILENDIRME RAPORU\n"
         f"Ogrenci: {payload.student_name} | Sinav Turu: {payload.exam_type}\n"
         f"Gorev Tamamlama: {payload.completed_tasks}/{payload.total_tasks} (%{completion_rate})\n"
         f"Son Deneme Neti: {payload.last_net} | Odak Suresi: {payload.focus_minutes} dk | Calisma Serisi: {payload.study_streak} gun\n"
