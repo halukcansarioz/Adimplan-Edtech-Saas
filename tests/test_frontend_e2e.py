@@ -95,3 +95,84 @@ def test_admin_demo_login(frontend_url, vp_name, viewport):
 
         assert errors == [], f"JS errors on admin.html ({vp_name}): {errors}"
         browser.close()
+
+def test_dark_mode_and_tools_dropdown(frontend_url):
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page(viewport={"width": 1280, "height": 800})
+        page.goto(f"{frontend_url}/app.html", wait_until="load")
+        modal = page.locator("#onboardingModal")
+        if modal.is_visible():
+            close_btn = page.locator("#onboardingModal button[onclick*='closeOnboardingModal']")
+            if close_btn.count() > 0:
+                close_btn.first.click()
+            else:
+                page.locator("#onboardingModal button").first.click()
+            modal.wait_for(state="hidden")
+        page.locator("#themeToggle").click()
+        assert page.locator("html").get_attribute("data-theme") == "dark"
+        page.locator("#toolsMenuBtn").click()
+        assert "open" in (page.locator("#toolsDropdown").get_attribute("class") or "")
+        page.keyboard.press("Escape")
+        assert "open" not in (page.locator("#toolsDropdown").get_attribute("class") or "")
+        browser.close()
+
+def test_tyt_score_calculator(frontend_url):
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page(viewport={"width": 1280, "height": 800})
+        page.goto(f"{frontend_url}/app.html", wait_until="load")
+        modal = page.locator("#onboardingModal")
+        if modal.is_visible():
+            close_btn = page.locator("#onboardingModal button[onclick*='closeOnboardingModal']")
+            if close_btn.count() > 0:
+                close_btn.first.click()
+            else:
+                page.locator("#onboardingModal button").first.click()
+            modal.wait_for(state="hidden")
+        page.locator(".tabs .tab-btn").nth(1).click()
+        assert page.locator("#tab-1").is_visible()
+        page.fill("#tytTr", "30")
+        page.fill("#tytMat", "25")
+        page.fill("#tytSos", "15")
+        page.fill("#tytFen", "10")
+        page.fill("#tytObp", "85")
+        ham = float(page.locator("#tytHamOut").inner_text().replace(",", "."))
+        yer = float(page.locator("#tytYerOut").inner_text().replace(",", "."))
+        assert 100.0 <= ham <= 500.0
+        assert ham <= yer <= 560.0
+        browser.close()
+
+
+def test_student_invite_hash_mode(frontend_url):
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page(viewport={"width": 1280, "height": 800})
+        page.goto(f"{frontend_url}/app.html#davet=s1", wait_until="load")
+        assert "active" in (page.locator("#roleOgr").get_attribute("class") or "")
+        assert not page.locator("#onboardingModal").is_visible()
+        browser.close()
+
+
+def test_parent_readonly_share_mode(frontend_url):
+    import base64
+    import json
+    payload = {
+        "name": "Ali Yilmaz",
+        "target": "Tip",
+        "goal": 480,
+        "tests": [{"date": "2026-11-01", "tyt": 85}],
+        "tasks": [{"title": "Matematik", "done": True}],
+    }
+    encoded = base64.b64encode(json.dumps(payload).encode("utf-8")).decode("ascii")
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page(viewport={"width": 1280, "height": 800})
+        errors = []
+        page.on("pageerror", lambda err: errors.append(str(err)))
+        page.goto(f"{frontend_url}/app.html#veli={encoded}", wait_until="load")
+        assert errors == []
+        assert not page.locator("#onboardingModal").is_visible()
+        assert "Veli Raporu" in page.locator("body").inner_text()
+        browser.close()
+        
