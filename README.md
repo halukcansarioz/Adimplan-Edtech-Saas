@@ -1,23 +1,24 @@
 # 🚀 İvme Akademi — EdTech Coaching SaaS
 
 [![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
-![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
-![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?logo=supabase&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
-![pytest](https://img.shields.io/badge/pytest-0A9EDC?logo=pytest&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+[![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?logo=supabase&logoColor=white)](https://img.shields.io/badge/Supabase-3ECF8E?logo=supabase&logoColor=white)
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
+[![pytest](https://img.shields.io/badge/pytest-0A9EDC?logo=pytest&logoColor=white)](https://img.shields.io/badge/pytest-0A9EDC?logo=pytest&logoColor=white)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](https://img.shields.io/badge/License-MIT-green.svg)
 
 ---
 
-Multi-tenant EdTech coaching and student tracking SaaS starter featuring **Supabase PostgreSQL Row-Level Security (RLS)**, a **FastAPI** analytics backend, an **Optical CSV Parser**, and an interactive 6-module MVP.
+Multi-tenant EdTech coaching and student tracking SaaS (**v1.0**) featuring **27 coaching & institutional modules**, **3 Supabase PostgreSQL Row-Level Security (RLS) migrations (`001`–`003`)**, a **rate-limited & SHA-256 cached FastAPI** analytics backend, an **Optical CSV Parser**, **PWA offline support (`sw.js`)**, and **16/16 Playwright desktop + 390px mobile E2E CI tests**.
 
 > 🚀 **Live Demo:** **[https://adimplan.vercel.app/](https://adimplan.vercel.app/)**
 
 ---
 
 # 📝 Table of Contents
+- [Live Pages](#-live-pages)
 - [About the Project](#-about-the-project)
-- [Features](#-features)
+- [v1.0 Feature Summary](#-v10-feature-summary)
 - [Tech Stack](#-tech-stack)
 - [Installation & Usage](#-installation--usage)
 - [Project Structure](#-project-structure)
@@ -25,97 +26,118 @@ Multi-tenant EdTech coaching and student tracking SaaS starter featuring **Supab
 
 ---
 
-# 📌 About the Project
+# 🌐 Live Pages
 
-**İvme Akademi EdTech SaaS** is a full-stack educational coaching platform designed for multi-tenant institutions, coaches, students, and parents. It combines strict database-level tenant isolation via Supabase PostgreSQL RLS (`supabase/migrations/001_initial_schema_rls.sql`), high-performance REST endpoints in FastAPI (`backend/main.py`), automated optical exam CSV ingestion (`backend/optical_parser.py`), and a 6-module interactive frontend MVP.
+| Page | Path | Description |
+| :--- | :--- | :--- |
+| **Landing Page** | `/` | Product overview, pricing/value proposition, and live entry point |
+| **Login & Onboarding** | `/login.html` | Role-based authentication & demo access |
+| **Coaching Workspace** | `/app.html` | Main 27-module student, coach, and parent coaching workspace |
+| **Admin Console** | `/admin.html` | Multi-tenant institutional management, coach handover, and analytics |
 
 ---
 
-# ✨ Features
+# 📌 About the Project
 
-- ✅ **1. Weekly Schedule & PDF** — Interactive weekly study planner with structured time blocks and printable PDF export.
-- ✅ **2. Mock Exam Trend & Heatmap** — Subject-level net score progression charts and topic mastery heatmaps.
-- ✅ **3. Leitner Mistake Vault** — Spaced-repetition mistake tracking system to organize and review missed exam questions.
-- ✅ **Landscape PDF & Image Leitner Cards** – Landscape weekly schedule PDF export (yatay PDF) and image-supported Leitner mistake cards (görselli Leitner kartı).
-- ✅ **Shareable Parent Link (`#veli=`) & Web Notifications** – Instant parent report sharing via `#veli=` URL hash and browser Web Notification session alerts.
-- ✅ **Institution Logo, `.dat` Optical Parser & KVKK Reset** – Custom institution logo URL support, `.dat` optical reader file parsing, and one-click KVKK local data reset.
- - ✅ **4. Pomodoro & RSVP Speed Reading** — Built-in Pomodoro focus timer paired with a Rapid Serial Visual Presentation (RSVP) speed-reading trainer.
-- ✅ **5. Parent Report & Messages** — Automated student progress reports and direct coach-parent communication.
-- ✅ **6. Institutional Panel & Optical CSV Import** — Multi-tenant institutional management dashboard with bulk optical reader CSV exam ingestion via `backend/optical_parser.py`.
+**İvme Akademi EdTech SaaS (v1.0)** is a full-stack educational coaching platform designed for multi-tenant institutions, coaches, students, and parents. It combines strict database-level tenant isolation via 3 Supabase PostgreSQL RLS migrations (`001`–`003`), high-performance rate-limited and SHA-256 cached REST endpoints in FastAPI (`backend/main.py`), automated optical exam CSV ingestion (`backend/optical_parser.py`), and a 27-module responsive PWA frontend (`frontend/`).
+
+---
+
+# ✨ v1.0 Feature Summary
+
+- **27 Koçluk / Kurumsal Modül:** Öğrenci, koç, veli ve kurum yöneticisi iş akışlarını kapsayan 27 uçtan uca koçluk ve kurumsal yönetim modülü.
+- **6 Chart.js Etkileşimli Grafik + 2 SVG İlerleme Halkası:** Deneme neti trendleri, ders dağılımları, hedef takibi ve anlık ilerleme göstergeleri.
+- **Senkronize Gece / Gündüz Modu:** Tüm canlı sayfalarda (`/`, `/login.html`, `/app.html`, `/admin.html`) eşzamanlı tema senkronizasyonu.
+- **3 Adımlı İlk Kurulum Sihirbazı:** Yeni kurum/koç/öğrenci başlangıcı için rehberli 3 adımlı kurulum akışı.
+- **PWA Çevrimdışı Desteği (`sw.js`):** Service Worker (`sw.js`) ile çevrimdışı önbellekleme ve yüklenebilir PWA deneyimi.
+- **8 Sınav Türü Konu Ağacı:** 8 farklı sınav türü için yapılandırılmış müfredat ve konu ilerleme ağacı.
+- **Hata Kök Nedeni Analizi:** Yanlış ve boş soruların konu/beceri bazlı kök neden analizi.
+- **Koç Devir Aracı:** Öğrencilerin ve koçluk geçmişinin kurum içi başka bir koça güvenli devri.
+- **3 Supabase RLS Migrasyonu (`001`–`003`):**
+  - `supabase/migrations/001_initial_schema_rls.sql`
+  - `supabase/migrations/002_full_27_modules_rls.sql`
+  - `supabase/migrations/003_workspace_snapshots.sql`
+- **FastAPI Rate-Limited & SHA-256 Önbellekli Backend:** Hız sınırlamalı (rate-limited), SHA-256 önbellekli API uç noktaları ve Optik CSV ayrıştırıcı (`backend/optical_parser.py`).
+- **16/16 Playwright Masaüstü + 390px Mobil E2E & Backend CI Testleri:** GitHub Actions üzerinde hem `test` (pytest) hem `frontend-e2e` (16/16 masaüstü ve 390px mobil viewport Playwright) test doğrulaması.
 
 ---
 
 # 🛠 Tech Stack
 
-| Category | Technology | Purpose |
-| :--- | :--- | :--- |
-| **Backend API** | FastAPI | Analytics, optical CSV parsing & multi-tenant endpoints (`backend/main.py`) |
-| **Database & Auth** | Supabase (PostgreSQL RLS) | Multi-tenant relational schema with Row-Level Security policies |
-| **Optical Ingestion** | Python CSV Parser | Bulk optical exam form parsing (`backend/optical_parser.py`) |
-| **Testing** | pytest | Automated backend & parser unit tests (`backend/tests/`) |
-| **Deployment** | Render & GitHub Pages | Backend Blueprint (`render.yaml`) & static 6-module MVP demo |
-| **CI/CD** | GitHub Actions | Automated `pytest` CI pipeline (`.github/workflows/ci.yml`) |
+* **Frontend:** Vanilla HTML5, CSS3, JavaScript (27 Modules, Chart.js, SVG Progress Rings, PWA `sw.js`, Dark/Light Theme Sync)
+* **Backend:** Python 3.11, FastAPI, Uvicorn (Rate Limiting & SHA-256 Response Caching)
+* **Database & Auth:** Supabase (PostgreSQL with Row-Level Security — Migrations `001`–`003`)
+* **Testing & CI:** `pytest`, Playwright E2E (16/16 Desktop + 390px Mobile), GitHub Actions (`test` & `frontend-e2e`)
+* **Deployment:** Vercel (Frontend) & Render (Backend)
 
 ---
 
-# ⚙️ Installation & Usage
+# 🚀 Installation & Usage
 
-### 1. Clone the Repository
-
+### 1. Clone the repository
 ```bash
-git clone git@github.com:halukcansarioz/adimplan-edtech-saas.git
-cd adimplan-edtech-saas
+git clone https://github.com/halukcansarioz/Adimplan-Edtech-Saas
+cd Adimplan-Edtech-Saas
+```
+
+### 2. Configure Environment Variables
+```bash
 cp .env.example .env
+# Fill in your SUPABASE_URL, SUPABASE_ANON_KEY, and SUPABASE_SERVICE_ROLE_KEY
 ```
 
-### 2. Database Migration (Supabase PostgreSQL RLS)
+### 3. Apply Database Migrations
+Run all 3 SQL migrations in order (`001` → `003`) in your Supabase SQL Editor:
+1. `supabase/migrations/001_initial_schema_rls.sql`
+2. `supabase/migrations/002_full_27_modules_rls.sql`
+3. `supabase/migrations/003_workspace_snapshots.sql`
 
+### 4. Run the Backend Locally
 ```bash
-psql "$DATABASE_URL" -f supabase/migrations/001_initial_schema_rls.sql
+pip install -r backend/requirements.txt
+uvicorn backend.main:app --reload
 ```
 
-### 3. Backend Server (FastAPI)
-
+### 5. Run Tests
 ```bash
-cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload
-```
-
-### 4. Running Tests
-
-```bash
-cd backend
+# Backend unit & API tests
 pytest
+
+# Frontend E2E tests (Desktop + 390px Mobile)
+npx playwright test
 ```
-### 5. Standalone Website Deployment
-- **Vercel:** Import the repository on Vercel and set **Root Directory** to `frontend` to deploy the standalone web application.
-- **Render Blueprint (One-Click Setup):** Connect the repository via Render Blueprint (`render.yaml`) to deploy both `adimplan-web` (static frontend from `./frontend`) and `adimplan-api` (FastAPI backend) together in one click.
+
 ---
 
-# 📁 Project Structure
+# 📂 Project Structure
 
 ```text
-adimplan-edtech-saas/
-├── .github/
-│   └── workflows/
-│       └── ci.yml                              # GitHub Actions pytest CI
+Adimplan-Edtech-Saas/
+├── .github/workflows/
+│   └── ci.yml                       # GitHub Actions CI (test + frontend-e2e)
 ├── backend/
-│   ├── main.py                                 # FastAPI application
-│   ├── optical_parser.py                       # Optical exam CSV parser
-│   ├── requirements.txt                        # Python dependencies
-│   └── tests/                                  # pytest test suite
-├── supabase/
-│   └── migrations/
-│       └── 001_initial_schema_rls.sql          # Multi-tenant PostgreSQL RLS schema
-├── .env.example                                # Environment variable template
-├── LICENSE                                     # Project license
-├── README.md                                   # Project documentation
-└── render.yaml                                 # Render deployment blueprint
+│   ├── main.py                      # FastAPI app (rate-limited & SHA-256 cached)
+│   ├── optical_parser.py            # Optical exam CSV parser
+│   └── requirements.txt
+├── frontend/
+│   ├── index.html                   # Landing page (/)
+│   ├── login.html                   # Auth page (/login.html)
+│   ├── app.html                     # 27-module coaching workspace (/app.html)
+│   ├── admin.html                   # Admin & coach handover console (/admin.html)
+│   └── sw.js                        # PWA offline Service Worker
+├── supabase/migrations/
+│   ├── 001_initial_schema_rls.sql   # Initial multi-tenant RLS schema
+│   ├── 002_full_27_modules_rls.sql  # 27-module tables & RLS policies
+│   └── 003_workspace_snapshots.sql  # Workspace snapshots migration
+├── tests/                           # pytest & Playwright E2E test suites
+├── .env.example
+├── render.yaml
+├── vercel.json
+└── README.md
 ```
 
 ---
 
-# 📜 License
+# 📄 License
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+Distributed under the **MIT License**. See `LICENSE` for more information.
