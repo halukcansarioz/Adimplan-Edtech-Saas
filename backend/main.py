@@ -208,3 +208,121 @@ def generate_parent_report(payload: ParentReportRequest):
     }
     _response_cache[cache_key] = result
     return {**result, "cached": False}
+from typing import Literal
+import urllib.request
+import urllib.error
+
+
+class BillingQuoteRequest(BaseModel):
+    plan: Literal["mini", "starter", "medium", "pro"]
+    billing_cycle: Literal["monthly", "yearly"] = "monthly"
+
+
+PLAN_CATALOG = {
+    "mini": {
+        "monthly_price": 490.0,
+        "student_quota": 15,
+        "features": ["15 ogrenci kotasi", "Temel YKS/LGS takip", "Haftalik rapor"],
+    },
+    "starter": {
+        "monthly_price": 990.0,
+        "student_quota": 40,
+        "features": ["40 ogrenci kotasi", "AI deneme analizi", "Veli PDF/E-posta raporu"],
+    },
+    "medium": {
+        "monthly_price": 1990.0,
+        "student_quota": 120,
+        "features": ["120 ogrenci kotasi", "Coklu koc yonetimi", "Oncelikli AI & bildirimler"],
+    },
+    "pro": {
+        "monthly_price": 3490.0,
+        "student_quota": 300,
+        "features": ["300 ogrenci kotasi", "Ozel kurum alan adi & PWA", "iyzico/PayTR tahsilat & API erisimi"],
+    },
+}
+
+
+@app.post("/api/billing/quote")
+def billing_quote(payload: BillingQuoteRequest):
+    plan_info = PLAN_CATALOG[payload.plan]
+    monthly_price = plan_info["monthly_price"]
+    if payload.billing_cycle == "yearly":
+        discount_rate = 0.20
+        subtotal = round(monthly_price * 12 * (1 - discount_rate), 2)
+    else:
+        discount_rate = 0.0
+        subtotal = round(monthly_price, 2)
+
+    vat_rate = 0.20
+    vat_amount = round(subtotal * vat_rate, 2)
+    total_with_vat = round(subtotal + vat_amount, 2)
+
+    return {
+        "plan": payload.plan,
+        "billing_cycle": payload.billing_cycle,
+        "currency": "TRY",
+        "subtotal_excl_vat": subtotal,
+        "discount_rate": discount_rate,
+        "vat_rate": vat_rate,
+        "vat_amount": vat_amount,
+        "total_amount": total_with_vat,
+        "kdv_dahil_tutar": total_with_vat,
+        "student_quota": plan_info["student_quota"],
+        "features": plan_info["features"],
+        "payment_providers_ready": ["iyzico", "paytr"],
+    }
+
+
+class ParentEmailRequest(BaseModel):
+    parent_email: str = Field(..., min_length=5)
+    student_name: str = Field(..., min_length=1)
+    report_text: str = Field(..., min_length=1)
+
+
+@app.post("/api/notify/parent-email")
+def notify_parent_email(payload: ParentEmailRequest):
+    subject = f"Adimplan Haftalik Veli Raporu - {payload.student_name}"
+    resend_api_key = os.getenv("RESEND_API_KEY", "").strip()
+
+    if not resend_api_key:
+        return {
+            "status": "dry_run",
+            "provider": "resend",
+            "to": payload.parent_email,
+            "subject": subject,
+            "student_name": payload.student_name,
+            "preview": payload.report_text[:300],
+        }
+
+    from_email = os.getenv("RESEND_FROM_EMAIL", "Adimplan <noreply@adimplan.com>")
+    body = json.dumps({
+        "from": from_email,
+        "to": [payload.parent_email],
+        "subject": subject,
+        "text": payload.report_text,
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        "https://api.resend.com/emails",
+        data=body,
+        headers={
+            "Authorization": f"Bearer {resend_api_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            resp_data = json.loads(resp.read().decode("utf-8"))
+        return {
+            "status": "sent",
+            "provider": "resend",
+            "to": payload.parent_email,
+            "subject": subject,
+            "resend_response": resp_data,
+        }
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="ignore")
+        raise HTTPException(status_code=502, detail=f"Resend API hatasi: {detail}")
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"E-posta gonderim hatasi: {str(exc)}")
