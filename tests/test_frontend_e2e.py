@@ -148,7 +148,7 @@ def test_student_invite_hash_mode(frontend_url):
     with sync_playwright() as p:
         browser = p.chromium.launch()
         page = browser.new_page(viewport={"width": 1280, "height": 800})
-        page.goto(f"{frontend_url}/app.html#davet=s1", wait_until="load")
+        page.goto(f"{frontend_url}/app.html#davet=zeynep", wait_until="load")
         assert "active" in (page.locator("#roleOgr").get_attribute("class") or "")
         assert not page.locator("#onboardingModal").is_visible()
         browser.close()
