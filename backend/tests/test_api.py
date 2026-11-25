@@ -168,4 +168,51 @@ def test_response_caching():
     second_parent = client.post("/api/parent-report", json=parent_payload)
     assert second_parent.status_code == 200
     assert second_parent.json()["cached"] is True
-    
+ 
+
+def test_billing_quote_monthly_and_yearly():
+    monthly_res = client.post(
+        "/api/billing/quote",
+        json={"plan": "starter", "billing_cycle": "monthly"},
+    )
+    assert monthly_res.status_code == 200
+    monthly_data = monthly_res.json()
+    assert monthly_data["plan"] == "starter"
+    assert monthly_data["billing_cycle"] == "monthly"
+    assert monthly_data["discount_rate"] == 0.0
+    assert monthly_data["student_quota"] == 40
+    assert monthly_data["total_amount"] == monthly_data["kdv_dahil_tutar"]
+    assert monthly_data["total_amount"] == round(990.0 * 1.20, 2)
+    assert len(monthly_data["features"]) > 0
+
+    yearly_res = client.post(
+        "/api/billing/quote",
+        json={"plan": "pro", "billing_cycle": "yearly"},
+    )
+    assert yearly_res.status_code == 200
+    yearly_data = yearly_res.json()
+    assert yearly_data["plan"] == "pro"
+    assert yearly_data["billing_cycle"] == "yearly"
+    assert yearly_data["discount_rate"] == 0.20
+    assert yearly_data["student_quota"] == 300
+    expected_subtotal = round(3490.0 * 12 * 0.80, 2)
+    assert yearly_data["subtotal_excl_vat"] == expected_subtotal
+    assert yearly_data["total_amount"] == round(expected_subtotal * 1.20, 2)
+
+
+def test_notify_parent_email_dry_run(monkeypatch):
+    monkeypatch.delenv("RESEND_API_KEY", raising=False)
+    res = client.post(
+        "/api/notify/parent-email",
+        json={
+            "parent_email": "veli@example.com",
+            "student_name": "Ali Yilmaz",
+            "report_text": "Bu hafta 250 soru cozuldu ve deneme neti 72.5 oldu.",
+        },
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "dry_run"
+    assert data["to"] == "veli@example.com"
+    assert "Ali Yilmaz" in data["subject"]
+    assert "250 soru" in data["preview"]   
