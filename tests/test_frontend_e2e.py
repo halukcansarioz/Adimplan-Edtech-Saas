@@ -284,7 +284,8 @@ def _open(browser, url, init_script=""):
     page.on("pageerror", lambda err: errors.append(str(err)))
     page.on("dialog", lambda dialog: dialog.accept())
     page.goto(url, wait_until="load")
-    return page, errors
+    page.evaluate("() => { const m = document.getElementById('onboardingModal'); if (m) { m.classList.remove('show', 'active', 'open'); m.style.display = 'none'; } }")
+        return page, errors
 
 
 def test_all_inline_handlers_exist(frontend_url):
