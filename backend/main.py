@@ -155,7 +155,7 @@ def _cache_get(key: str):
                 return json.loads(raw)
         except Exception:
             pass
-        value = _response_cache.get(key)
+    value = _response_cache.get(key)
     if value is not None:
         _response_cache.move_to_end(key)
     return value
@@ -164,7 +164,7 @@ def _cache_get(key: str):
 def _cache_put(key: str, value: dict) -> None:
     if _redis_client is not None:
         try:
-        _redis_client.setex(f"adimplan:cache:{key}", 3600, json.dumps(value, ensure_ascii=False))
+            _redis_client.setex(f"adimplan:cache:{key}", 3600, json.dumps(value, ensure_ascii=False))
             return
         except Exception:
             pass
