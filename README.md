@@ -1,4 +1,4 @@
-# 🚀 İvme Akademi — EdTech Coaching SaaS
+# 🚀 Adimplan — EdTech Coaching SaaS (v1.4.0)
 
 [![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
@@ -34,7 +34,7 @@ Multi-tenant EdTech coaching and student tracking SaaS (**v1.0**) featuring **27
 | **Login & Onboarding** | `/login.html` | Role-based authentication & demo access |
 | **Coaching Workspace** | `/app.html` | Main 27-module student, coach, and parent coaching workspace |
 | **Admin Console** | `/admin.html` | Multi-tenant institutional management, coach handover, and analytics |
-
+| **Super Admin / CMS Console** | `/super-admin.html` | Super admin / CMS console (Süper yönetici / CMS konsolu) 
 ---
 
 # 📌 About the Project
