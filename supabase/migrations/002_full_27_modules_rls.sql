@@ -279,4 +279,3 @@ create policy "Payment records isolated by tenant_id"
   on public.payment_records for all
   using (public.is_tenant_member(tenant_id))
   with check (public.is_tenant_member(tenant_id));
-);

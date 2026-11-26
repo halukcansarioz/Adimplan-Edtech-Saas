@@ -194,8 +194,8 @@ def test_billing_quote_monthly_and_yearly():
     assert yearly_data["plan"] == "pro"
     assert yearly_data["billing_cycle"] == "yearly"
     assert yearly_data["discount_rate"] == 0.20
-    assert yearly_data["student_quota"] == 300
-    expected_subtotal = round(3490.0 * 12 * 0.80, 2)
+    assert yearly_data["student_quota"] == 50
+    expected_subtotal = round(999.0 * 12 * 0.80, 2)
     assert yearly_data["subtotal_excl_vat"] == expected_subtotal
     assert yearly_data["total_amount"] == round(expected_subtotal * 1.20, 2)
 

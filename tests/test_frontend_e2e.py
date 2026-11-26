@@ -173,7 +173,9 @@ def test_parent_readonly_share_mode(frontend_url):
         page.goto(f"{frontend_url}/app.html#veli={encoded}", wait_until="load")
         assert errors == []
         assert not page.locator("#onboardingModal").is_visible()
-        assert "Veli Raporu" in page.locator("body").inner_text()
+        report = page.locator("#parentView").inner_text()
+        assert "Veli Raporu" in report
+        assert "Ali Yilmaz" in report and "Matematik" in report and "85" in report
         browser.close()
 
 def test_login_and_register_flow(frontend_url):
@@ -267,4 +269,129 @@ def test_super_admin_cms_updates_landing(frontend_url):
             assert custom_title in page.locator("h1").inner_text()
             assert errors == [], f"JS errors on CMS landing update: {errors}"
             context.close()
-            
+
+
+def _open(browser, url, init_script=""):
+    """New page with onboarding skipped, external requests blocked and errors collected."""
+    context = browser.new_context(viewport={"width": 1280, "height": 900})
+    context.route(lambda u: not u.startswith("http://127.0.0.1"), lambda route: route.abort())
+    context.add_init_script(
+        "if (!sessionStorage.getItem('_init')) { sessionStorage.setItem('_init', '1');"
+        "localStorage.setItem('ivme_onboarding_done', '1');" + init_script + "}"
+    )
+    page = context.new_page()
+    errors = []
+    page.on("pageerror", lambda err: errors.append(str(err)))
+    page.on("dialog", lambda dialog: dialog.accept())
+    page.goto(url, wait_until="load")
+    return page, errors
+
+
+def test_all_inline_handlers_exist(frontend_url):
+    """Every function named in an inline on* attribute must be defined."""
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        for name in PAGES + ["super-admin.html"]:
+            page, _ = _open(browser, f"{frontend_url}/{name}")
+            missing = page.evaluate(
+                r"""() => {
+                    const names = new Set();
+                    document.querySelectorAll('*').forEach(el => [...el.attributes]
+                        .filter(a => a.name.startsWith('on'))
+                        .forEach(a => {
+                            const m = a.value.trim().match(/^([A-Za-z_$][\w$]*)\s*\(/);
+                            if (m && !['if', 'return'].includes(m[1])) names.add(m[1]);
+                        }));
+                    return [...names].filter(n => typeof window[n] !== 'function');
+                }"""
+            )
+            assert missing == [], f"{name}: {missing}"
+            page.context.close()
+        browser.close()
+
+
+def test_coach_module_does_not_blank_main_tabs(frontend_url):
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page, errors = _open(browser, f"{frontend_url}/app.html")
+        page.click("[data-im=students]")
+        page.click(".sidebar-nav-item[data-tab='0']")
+        assert page.locator("#tab-0").is_visible()
+        page.click(".sidebar-nav-item[data-tab='home']")
+        assert page.locator("#tab-home").is_visible()
+        assert errors == []
+        browser.close()
+
+
+def test_user_text_is_not_executed_as_html(frontend_url):
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page, errors = _open(browser, f"{frontend_url}/app.html")
+        page.evaluate(
+            """() => {
+                window.__xss = 0;
+                const evil = '<img src=x onerror="window.__xss=1">';
+                cur().name = evil;
+                cur().tasks.push({id: 999, title: evil, day: 'Pzt', meta: evil, done: false});
+                save(); renderAll(); switchTab(0); toggleSidebarBell();
+            }"""
+        )
+        page.wait_for_timeout(300)
+        assert page.evaluate("window.__xss") == 0
+        assert errors == []
+        browser.close()
+
+
+def test_curriculum_and_weekly_drag_and_drop(frontend_url):
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page, errors = _open(browser, f"{frontend_url}/app.html")
+        page.evaluate("switchTab(1)")
+        assert "undefined" not in page.locator("#curriculumList").inner_text()
+        assert page.locator("#curriculumList select").count() > 0
+        page.evaluate("switchTab(0); setProgramView('grid')")
+        assert page.evaluate("cur().tasks[0].day") == "Pzt"
+        page.drag_and_drop(".week-col[data-day=Pzt] .week-task >> nth=0", ".week-col[data-day=Cum]")
+        assert page.evaluate("cur().tasks[0].day") == "Cum"
+        assert errors == []
+        browser.close()
+
+
+def test_app_survives_partial_saved_state(frontend_url):
+    broken = "localStorage.setItem('adimplan_v2_state', JSON.stringify({students: [], corp: {}}));"
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page, errors = _open(browser, f"{frontend_url}/app.html", broken)
+        assert page.locator("#studentSelect option").count() > 0
+        assert errors == []
+        browser.close()
+
+
+def test_backup_excludes_secrets(frontend_url):
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page, _ = _open(browser, f"{frontend_url}/app.html")
+        page.evaluate(
+            "localStorage.setItem('ivme_admin_pass', 'SECRET-PASS');"
+            "localStorage.setItem('ivme_supabase_anon_key', 'SECRET-KEY')"
+        )
+        with page.expect_download() as download:
+            page.evaluate("exportBackup()")
+        content = Path(download.value.path()).read_text(encoding="utf-8")
+        assert "SECRET-PASS" not in content and "SECRET-KEY" not in content
+        browser.close()
+
+
+def test_admin_password_change_needs_current_password(frontend_url):
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page, _ = _open(
+            browser, f"{frontend_url}/admin.html",
+            "localStorage.setItem('ivme_admin_pass', 'current-pass');",
+        )
+        page.evaluate("toggleSetup()")
+        page.fill("#adminPassIn", "wrong")
+        page.fill("#newPassIn", "attacker-pass")
+        page.click("button[onclick*=loginAdmin]")
+        assert page.evaluate("localStorage.getItem('ivme_admin_pass')") == "current-pass"
+        browser.close()

@@ -20,11 +20,13 @@ def _parse_non_negative_int(value: Any, field_name: str) -> int:
 
 def _detect_delimiter(csv_content: str) -> str:
     first_line = next((line for line in csv_content.splitlines() if line.strip()), "")
-    counts = {d: first_line.count(d) for d in (",", ";", "|")}
-    best = max((",", ";", "|"), key=lambda d: counts[d])
+    counts = {d: first_line.count(d) for d in (",", ";", "|", "\t")}
+    best = max(counts, key=lambda d: counts[d])
     return best if counts[best] > 0 else ","
     
 def parse_optical_csv(csv_content: str) -> Dict[str, Any]:
+    # Excel's "CSV UTF-8" export starts with a byte-order mark.
+    csv_content = (csv_content or "").lstrip("\ufeff")
     if not csv_content or not csv_content.strip():
         return {
             "total_rows": 0,
@@ -38,7 +40,12 @@ def parse_optical_csv(csv_content: str) -> Dict[str, Any]:
             },
         }
 
-    reader = csv.DictReader(io.StringIO(csv_content.strip()), delimiter=_detect_delimiter(csv_content))
+    # Leading blank lines are skipped but still counted, so error line numbers match the file.
+    lines = csv_content.splitlines(keepends=True)
+    skipped = next(i for i, line in enumerate(lines) if line.strip())
+    reader = csv.DictReader(
+        io.StringIO("".join(lines[skipped:]).rstrip()), delimiter=_detect_delimiter(csv_content)
+    )
     fieldnames = [col.strip() for col in (reader.fieldnames or []) if col]
     missing_columns = [col for col in REQUIRED_COLUMNS if col not in fieldnames]
     if missing_columns:
@@ -63,7 +70,8 @@ def parse_optical_csv(csv_content: str) -> Dict[str, Any]:
     records: List[Dict[str, Any]] = []
     errors: List[Dict[str, Any]] = []
 
-    for line_num, raw_row in enumerate(reader, start=2):
+    for raw_row in reader:
+        line_num = skipped + reader.line_num
         row = {
             (k.strip() if k else k): (v.strip() if isinstance(v, str) else v)
             for k, v in raw_row.items()
