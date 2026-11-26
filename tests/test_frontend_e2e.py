@@ -213,6 +213,7 @@ def test_weekly_grid_view_toggle(frontend_url):
             else:
                 page.locator("#onboardingModal button").first.click()
             modal.wait_for(state="hidden")
+        page.locator(".tabs .tab-btn").first.click()
         page.locator("#btnViewGrid").click()
         grid = page.locator(".week-grid")
         grid.wait_for(state="visible")
