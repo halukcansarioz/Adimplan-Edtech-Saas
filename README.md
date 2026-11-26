@@ -9,7 +9,7 @@
 
 ---
 
-Multi-tenant EdTech coaching and student tracking SaaS (**v1.0**) featuring **27 coaching & institutional modules**, **3 Supabase PostgreSQL Row-Level Security (RLS) migrations (`001`–`003`)**, a **rate-limited & SHA-256 cached FastAPI** analytics backend, an **Optical CSV Parser**, **PWA offline support (`sw.js`)**, and **16/16 Playwright desktop + 390px mobile E2E CI tests**.
+Multi-tenant EdTech coaching and student tracking SaaS (**v1.0**) featuring **27 coaching & institutional modules**, **4 Supabase PostgreSQL Row-Level Security (RLS) migrations (`001`–`004`)**, a **rate-limited & SHA-256 cached FastAPI** analytics backend, an **Optical CSV Parser**, **PWA offline support (`sw.js`)**, and **Playwright desktop + 390px mobile E2E CI tests**.
 
 > 🚀 **Live Demo:** **[https://adimplan.vercel.app/](https://adimplan.vercel.app/)**
 
@@ -39,7 +39,7 @@ Multi-tenant EdTech coaching and student tracking SaaS (**v1.0**) featuring **27
 
 # 📌 About the Project
 
-**İvme Akademi EdTech SaaS (v1.0)** is a full-stack educational coaching platform designed for multi-tenant institutions, coaches, students, and parents. It combines strict database-level tenant isolation via 3 Supabase PostgreSQL RLS migrations (`001`–`003`), high-performance rate-limited and SHA-256 cached REST endpoints in FastAPI (`backend/main.py`), automated optical exam CSV ingestion (`backend/optical_parser.py`), and a 27-module responsive PWA frontend (`frontend/`).
+**İvme Akademi EdTech SaaS (v1.0)** is a full-stack educational coaching platform designed for multi-tenant institutions, coaches, students, and parents. It combines strict database-level tenant isolation via 4 Supabase PostgreSQL RLS migrations (`001`–`004`), high-performance rate-limited and SHA-256 cached REST endpoints in FastAPI (`backend/main.py`), automated optical exam CSV ingestion (`backend/optical_parser.py`), and a 27-module responsive PWA frontend (`frontend/`).
 
 ---
 
@@ -53,12 +53,13 @@ Multi-tenant EdTech coaching and student tracking SaaS (**v1.0**) featuring **27
 - **8 Sınav Türü Konu Ağacı:** 8 farklı sınav türü için yapılandırılmış müfredat ve konu ilerleme ağacı.
 - **Hata Kök Nedeni Analizi:** Yanlış ve boş soruların konu/beceri bazlı kök neden analizi.
 - **Koç Devir Aracı:** Öğrencilerin ve koçluk geçmişinin kurum içi başka bir koça güvenli devri.
-- **3 Supabase RLS Migrasyonu (`001`–`003`):**
+- **4 Supabase RLS Migrasyonu (`001`–`004`):**
   - `supabase/migrations/001_initial_schema_rls.sql`
   - `supabase/migrations/002_full_27_modules_rls.sql`
   - `supabase/migrations/003_workspace_snapshots.sql`
+  - `supabase/migrations/004_security_hardening.sql`
 - **FastAPI Rate-Limited & SHA-256 Önbellekli Backend:** Hız sınırlamalı (rate-limited), SHA-256 önbellekli API uç noktaları ve Optik CSV ayrıştırıcı (`backend/optical_parser.py`).
-- **16/16 Playwright Masaüstü + 390px Mobil E2E & Backend CI Testleri:** GitHub Actions üzerinde hem `test` (pytest) hem `frontend-e2e` (16/16 masaüstü ve 390px mobil viewport Playwright) test doğrulaması.
+- **Playwright Masaüstü + 390px Mobil E2E & Backend CI Testleri:** GitHub Actions üzerinde hem `test` (pytest) hem `frontend-e2e` (masaüstü ve 390px mobil viewport Playwright) test doğrulaması.
 
 ---
 
@@ -66,8 +67,8 @@ Multi-tenant EdTech coaching and student tracking SaaS (**v1.0**) featuring **27
 
 * **Frontend:** Vanilla HTML5, CSS3, JavaScript (27 Modules, Chart.js, SVG Progress Rings, PWA `sw.js`, Dark/Light Theme Sync)
 * **Backend:** Python 3.11, FastAPI, Uvicorn (Rate Limiting & SHA-256 Response Caching)
-* **Database & Auth:** Supabase (PostgreSQL with Row-Level Security — Migrations `001`–`003`)
-* **Testing & CI:** `pytest`, Playwright E2E (16/16 Desktop + 390px Mobile), GitHub Actions (`test` & `frontend-e2e`)
+* **Database & Auth:** Supabase (PostgreSQL with Row-Level Security — Migrations `001`–`004`)
+* **Testing & CI:** `pytest`, Playwright E2E (Desktop + 390px Mobile), GitHub Actions (`test` & `frontend-e2e`)
 * **Deployment:** Vercel (Frontend) & Render (Backend)
 
 ---
@@ -87,10 +88,11 @@ cp .env.example .env
 ```
 
 ### 3. Apply Database Migrations
-Run all 3 SQL migrations in order (`001` → `003`) in your Supabase SQL Editor:
+Run all 4 SQL migrations in order (`001` → `004`) in your Supabase SQL Editor (`004` is required for cloud backup/restore):
 1. `supabase/migrations/001_initial_schema_rls.sql`
 2. `supabase/migrations/002_full_27_modules_rls.sql`
 3. `supabase/migrations/003_workspace_snapshots.sql`
+4. `supabase/migrations/004_security_hardening.sql`
 
 ### 4. Run the Backend Locally
 ```bash
@@ -101,10 +103,11 @@ uvicorn backend.main:app --reload
 ### 5. Run Tests
 ```bash
 # Backend unit & API tests
-pytest
+pytest backend/tests
 
-# Frontend E2E tests (Desktop + 390px Mobile)
-npx playwright test
+# Frontend E2E tests (Desktop + 390px Mobile, Python Playwright)
+pip install playwright && playwright install chromium
+pytest tests/test_frontend_e2e.py
 ```
 
 ---
@@ -128,7 +131,8 @@ Adimplan-Edtech-Saas/
 ├── supabase/migrations/
 │   ├── 001_initial_schema_rls.sql   # Initial multi-tenant RLS schema
 │   ├── 002_full_27_modules_rls.sql  # 27-module tables & RLS policies
-│   └── 003_workspace_snapshots.sql  # Workspace snapshots migration
+│   ├── 003_workspace_snapshots.sql  # Workspace snapshots migration
+│   └── 004_security_hardening.sql   # RLS and cloud sync security fixes
 ├── tests/                           # pytest & Playwright E2E test suites
 ├── .env.example
 ├── render.yaml

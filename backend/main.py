@@ -1,18 +1,23 @@
-from typing import List, Dict, Optional, Set, Literal
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
 import hashlib
 import json
 import os
 import time
+import urllib.error
+import urllib.request
 import uuid
-from collections import defaultdict
+from collections import OrderedDict
+from typing import Dict, List, Literal, Optional, Set
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
+
 try:
     from optical_parser import parse_optical_csv
 except ImportError:
     from backend.optical_parser import parse_optical_csv
-    
+
 app = FastAPI(title="İvme Akademi EdTech Analytics API", version="0.1.0")
 SENTRY_DSN = os.getenv("SENTRY_DSN")
 if SENTRY_DSN:
@@ -24,24 +29,38 @@ if SENTRY_DSN:
 
 RATE_LIMIT_REQUESTS = 60
 RATE_LIMIT_WINDOW_SECONDS = 60
-_rate_limit_store: Dict[str, List[float]] = defaultdict(list)
-_response_cache: Dict[str, dict] = {}
+# The e-mail endpoint can send real mail, so it gets a much tighter limit.
+NOTIFY_PATH = "/api/notify/parent-email"
+NOTIFY_RATE_LIMIT_REQUESTS = 5
+RATE_LIMIT_MAX_KEYS = 10_000
+CACHE_MAX_ENTRIES = 500
+_rate_limit_store: Dict[str, List[float]] = {}
+_response_cache: "OrderedDict[str, dict]" = OrderedDict()
 
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
+    # Health probes and CORS preflights must not consume the quota.
+    if request.method == "OPTIONS" or request.url.path == "/health":
+        return await call_next(request)
     client_ip = request.client.host if request.client else "unknown"
     now = time.time()
     window_start = now - RATE_LIMIT_WINDOW_SECONDS
-    timestamps = [ts for ts in _rate_limit_store[client_ip] if ts > window_start]
-    if len(timestamps) >= RATE_LIMIT_REQUESTS:
-        _rate_limit_store[client_ip] = timestamps
-        return JSONResponse(
-            status_code=429,
-            content={"detail": "Rate limit exceeded."},
-        )
-    timestamps.append(now)
-    _rate_limit_store[client_ip] = timestamps
+    limits = [(client_ip, RATE_LIMIT_REQUESTS)]
+    if request.url.path == NOTIFY_PATH:
+        limits.append((f"{client_ip}|notify", NOTIFY_RATE_LIMIT_REQUESTS))
+
+    if len(_rate_limit_store) >= RATE_LIMIT_MAX_KEYS:
+        for key in [k for k, v in _rate_limit_store.items() if not v or v[-1] <= window_start]:
+            del _rate_limit_store[key]
+
+    for key, limit in limits:
+        timestamps = [ts for ts in _rate_limit_store.get(key, []) if ts > window_start]
+        _rate_limit_store[key] = timestamps
+        if len(timestamps) >= limit:
+            return JSONResponse(status_code=429, content={"detail": "Rate limit exceeded."})
+    for key, _ in limits:
+        _rate_limit_store[key].append(now)
     return await call_next(request)
 
 
@@ -83,11 +102,45 @@ def require_role(request: Request, allowed_roles: Optional[Set[str]] = None) -> 
             detail=f"Role '{role}' is not permitted to access this resource.",
         )
     return role
-    
+
+
+# Added after the other middlewares so it wraps them: 429 responses keep their CORS headers.
+DEFAULT_ALLOWED_ORIGINS = (
+    "https://adimplan.vercel.app,https://adimplan-edtech-saas.vercel.app,"
+    "http://localhost:3000,http://localhost:5500,http://127.0.0.1:5500"
+)
+ALLOWED_ORIGINS = [
+    origin.strip().rstrip("/")
+    for origin in os.getenv("ALLOWED_ORIGINS", DEFAULT_ALLOWED_ORIGINS).split(",")
+    if origin.strip()
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Request-Id", "X-User-Role"],
+    expose_headers=["X-Request-Id"],
+)
+
+
 def _make_cache_key(prefix: str, payload: BaseModel) -> str:
     raw = json.dumps(payload.model_dump(), sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(f"{prefix}:{raw}".encode("utf-8")).hexdigest()
-    
+
+
+def _cache_get(key: str):
+    value = _response_cache.get(key)
+    if value is not None:
+        _response_cache.move_to_end(key)
+    return value
+
+
+def _cache_put(key: str, value: dict) -> None:
+    _response_cache[key] = value
+    _response_cache.move_to_end(key)
+    while len(_response_cache) > CACHE_MAX_ENTRIES:
+        _response_cache.popitem(last=False)
+
 
 class TopicResult(BaseModel):
     topic_name: str = Field(..., min_length=1)
@@ -111,8 +164,9 @@ def analyze_exam(payload: ExamAnalysisRequest):
     if not payload.topics:
         raise HTTPException(status_code=400, detail="At least one topic is required.")
     cache_key = _make_cache_key("analyze_exam", payload)
-    if cache_key in _response_cache:
-        return {**_response_cache[cache_key], "cached": True}
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return {**cached, "cached": True}
     analyzed_topics = []
     total_net = 0.0
     for item in payload.topics:
@@ -136,7 +190,7 @@ def analyze_exam(payload: ExamAnalysisRequest):
         "recommended_focus_topic": weakest_topic["topic_name"],
         "weakest_topic_details": weakest_topic,
     }
-    _response_cache[cache_key] = result
+    _cache_put(cache_key, result)
     return {**result, "cached": False}
 
 class OpticalCsvImportRequest(BaseModel):
@@ -146,7 +200,7 @@ class OpticalCsvImportRequest(BaseModel):
 def import_optical_csv(request: Request, payload: OpticalCsvImportRequest):
     require_role(request, COACH_OR_ADMIN_ROLES)
     if not payload.csv_text or not payload.csv_text.strip():
-      raise HTTPException(status_code=400, detail="csv_text is required.")
+        raise HTTPException(status_code=400, detail="csv_text is required.")
     return parse_optical_csv(payload.csv_text)
 
 class ParentReportRequest(BaseModel):
@@ -154,7 +208,7 @@ class ParentReportRequest(BaseModel):
     exam_type: str = Field(default="YKS")
     completed_tasks: int = Field(..., ge=0)
     total_tasks: int = Field(..., ge=0)
-    last_net: float = Field(..., ge=0)
+    last_net: float  # may be negative: wrong answers are penalised
     focus_minutes: int = Field(..., ge=0)
     study_streak: int = Field(..., ge=0)
     mood: str = Field(default="normal")
@@ -164,8 +218,9 @@ class ParentReportRequest(BaseModel):
 @app.post("/api/parent-report")
 def generate_parent_report(payload: ParentReportRequest):
     cache_key = _make_cache_key("parent_report", payload)
-    if cache_key in _response_cache:
-        return {**_response_cache[cache_key], "cached": True}
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return {**cached, "cached": True}
     completion_rate = (
         round((payload.completed_tasks / payload.total_tasks) * 100, 1)
         if payload.total_tasks > 0
@@ -192,7 +247,8 @@ def generate_parent_report(payload: ParentReportRequest):
     if mood_norm in {"low", "anxious", "stressed", "tired", "kaygili", "yorgun", "kotu", "1", "2"}:
         risk_score += 1
 
-    if len(payload.weak_topics) >= 3:
+    weak_list = [t.strip() for t in payload.weak_topics if t.strip()]
+    if len(weak_list) >= 3:
         risk_score += 1
 
     if risk_score >= 4:
@@ -205,7 +261,6 @@ def generate_parent_report(payload: ParentReportRequest):
         risk_level = "normal"
         risk_label = "Normal"
 
-    weak_list = [t.strip() for t in payload.weak_topics if t.strip()]
     weak_text = ", ".join(weak_list) if weak_list else "Belirtilen kritik zayif konu yok"
 
     action_1 = (
@@ -247,11 +302,8 @@ def generate_parent_report(payload: ParentReportRequest):
         "weekly_actions": weekly_actions,
         "report_text": report_text,
     }
-    _response_cache[cache_key] = result
+    _cache_put(cache_key, result)
     return {**result, "cached": False}
-from typing import Literal
-import urllib.request
-import urllib.error
 
 
 class BillingQuoteRequest(BaseModel):
@@ -275,11 +327,6 @@ PLAN_CATALOG = {**BILLING_PLANS,
         "monthly_price": 1990.0,
         "student_quota": 120,
         "features": ["120 ogrenci kotasi", "Coklu koc yonetimi", "Oncelikli AI & bildirimler"],
-    },
-    "pro": {
-        "monthly_price": 3490.0,
-        "student_quota": 300,
-        "features": ["300 ogrenci kotasi", "Ozel kurum alan adi & PWA", "iyzico/PayTR tahsilat & API erisimi"],
     },
 }
 
@@ -316,15 +363,16 @@ def billing_quote(payload: BillingQuoteRequest):
 
 
 class ParentEmailRequest(BaseModel):
-    parent_email: str = Field(..., min_length=5)
-    student_name: str = Field(..., min_length=1)
-    report_text: str = Field(..., min_length=1)
+    # Exactly one plain address: no lists, display names or line breaks.
+    parent_email: str = Field(..., min_length=5, max_length=254, pattern=r"^[^@\s,;<>]+@[^@\s,;<>]+\.[^@\s,;<>]+$")
+    student_name: str = Field(..., min_length=1, max_length=120)
+    report_text: str = Field(..., min_length=1, max_length=10_000)
 
 
 @app.post("/api/notify/parent-email")
 def notify_parent_email(request: Request, payload: ParentEmailRequest):
     require_role(request, COACH_OR_ADMIN_ROLES)
-    subject = f"Adimplan Haftalik Veli Raporu - {payload.student_name}"
+    subject = f"Adimplan Haftalik Veli Raporu - {' '.join(payload.student_name.split())}"
     resend_api_key = os.getenv("RESEND_API_KEY", "").strip()
 
     if not resend_api_key:
