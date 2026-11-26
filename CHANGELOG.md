@@ -1,6 +1,17 @@
 # Değişiklik Günlüğü (Changelog)
 
 Bu dosya **İvme Akademi — Adımplan EdTech SaaS** projesindeki önemli sürüm değişikliklerini içerir.
+## [v1.4.0]
+
+### Eklenenler
+- **Günler Arası Sürükle-Bırak Haftalık Takvim:** `frontend/app.html` (`#tab-0`) üzerindeki 7 günlük `.week-grid` tablosunda her gün sütunu sürükle-bırak hedefi (`ondragover`, `ondrop`) haline getirildi; görev kartları sürüklenebilir (`draggable="true"`) ve karta tıklanarak tamamlandı işaretlenebilir yapıldı, gün değişiklikleri anında `localStorage`'a kaydedilir.
+- **Playwright E2E Kapsamı:** `tests/test_frontend_e2e.py` dosyasına `test_weekly_grid_view_toggle` testi eklenerek `#btnViewGrid` ile 7 sütunlu tablonun görünürlüğü ve `390px` mobil ekranda yatay taşma olmadığı doğrulandı (17/17 E2E).
+
+## [v1.3.0]
+
+### Eklenenler
+- **7 Günlük Haftalık Tablo Görünümü:** `frontend/app.html` içinde `#btnViewGrid` / `#btnViewList` geçişiyle Pazartesi'den Pazar'a 7 sütunlu `.week-grid` haftalık program tablosu eklendi.
+- **Web Audio Pomodoro Zil Sesi:** Pomodoro zamanlayıcısı tamamlandığında Web Audio API tabanlı bildirim zil sesi eklendi.
 
 ## [v1.2.0]
 
