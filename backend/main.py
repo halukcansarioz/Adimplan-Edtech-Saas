@@ -3,6 +3,7 @@ import json
 import os
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import uuid
 from collections import OrderedDict
@@ -123,6 +124,54 @@ app.add_middleware(
 )
 
 
+# Real authentication: active when both variables are set. The caller's Supabase
+# access token is verified with Supabase, and the role comes from public.memberships
+# (only an owner can change it once migration 004 is applied). Without them the API
+# runs in demo mode, where X-User-Role is client-controlled and proves nothing.
+def _supabase_settings():
+    url = os.getenv("SUPABASE_URL", "").strip().rstrip("/")
+    key = os.getenv("SUPABASE_ANON_KEY", "").strip()
+    return (url, key) if url and key else None
+
+
+def _supabase_get(path: str, token: str):
+    url, key = _supabase_settings()
+    req = urllib.request.Request(
+        f"{url}{path}",
+        headers={"apikey": key, "Authorization": f"Bearer {token}"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        if exc.code in (401, 403):
+            raise HTTPException(status_code=401, detail="Oturum gecersiz veya suresi dolmus. Tekrar giris yapin.")
+        raise HTTPException(status_code=503, detail="Kimlik dogrulama servisine ulasilamadi.")
+    except Exception:
+        raise HTTPException(status_code=503, detail="Kimlik dogrulama servisine ulasilamadi.")
+
+
+def require_staff(request: Request) -> Optional[str]:
+    """Allow only coaches and owners. Returns the user id, or None in demo mode."""
+    if _supabase_settings() is None:
+        require_role(request, COACH_OR_ADMIN_ROLES)
+        return None
+    scheme, _, token = (request.headers.get("Authorization") or "").partition(" ")
+    token = token.strip()
+    if scheme.lower() != "bearer" or not token:
+        raise HTTPException(status_code=401, detail="Bu islem icin giris yapmalisiniz.")
+    user = _supabase_get("/auth/v1/user", token)
+    user_id = user.get("id") if isinstance(user, dict) else None
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Oturum gecersiz veya suresi dolmus. Tekrar giris yapin.")
+    query = urllib.parse.urlencode(
+        {"select": "role", "user_id": f"eq.{user_id}", "role": "in.(owner,coach)", "limit": "1"}
+    )
+    if not _supabase_get(f"/rest/v1/memberships?{query}", token):
+        raise HTTPException(status_code=403, detail="Bu islem yalnizca koc ve kurum sahipleri icindir.")
+    return user_id
+
+
 def _make_cache_key(prefix: str, payload: BaseModel) -> str:
     raw = json.dumps(payload.model_dump(), sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(f"{prefix}:{raw}".encode("utf-8")).hexdigest()
@@ -198,7 +247,7 @@ class OpticalCsvImportRequest(BaseModel):
 
 @app.post("/api/import-optical-csv")
 def import_optical_csv(request: Request, payload: OpticalCsvImportRequest):
-    require_role(request, COACH_OR_ADMIN_ROLES)
+    require_staff(request)
     if not payload.csv_text or not payload.csv_text.strip():
         raise HTTPException(status_code=400, detail="csv_text is required.")
     return parse_optical_csv(payload.csv_text)
@@ -371,7 +420,7 @@ class ParentEmailRequest(BaseModel):
 
 @app.post("/api/notify/parent-email")
 def notify_parent_email(request: Request, payload: ParentEmailRequest):
-    require_role(request, COACH_OR_ADMIN_ROLES)
+    require_staff(request)
     subject = f"Adimplan Haftalik Veli Raporu - {' '.join(payload.student_name.split())}"
     resend_api_key = os.getenv("RESEND_API_KEY", "").strip()
 
@@ -384,6 +433,13 @@ def notify_parent_email(request: Request, payload: ParentEmailRequest):
             "student_name": payload.student_name,
             "preview": payload.report_text[:300],
         }
+
+    # Never send real mail on the strength of a client-supplied role header.
+    if _supabase_settings() is None:
+        raise HTTPException(
+            status_code=503,
+            detail="E-posta gonderimi kapali: sunucuda SUPABASE_URL ve SUPABASE_ANON_KEY tanimlanmali.",
+        )
 
     from_email = os.getenv("RESEND_FROM_EMAIL", "Adimplan <noreply@adimplan.com>")
     body = json.dumps({

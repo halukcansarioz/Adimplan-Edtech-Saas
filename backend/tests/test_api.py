@@ -237,6 +237,67 @@ def test_rbac_blocks_student_on_coach_endpoints():
     assert res_email.status_code == 403
 
 
+EMAIL_BODY = {"parent_email": "veli@example.com", "student_name": "Ali", "report_text": "Rapor"}
+
+
+def _use_supabase(monkeypatch, memberships):
+    """Configure real auth and replace the two Supabase calls with fakes."""
+    import main
+
+    monkeypatch.setenv("SUPABASE_URL", "https://example.supabase.co")
+    monkeypatch.setenv("SUPABASE_ANON_KEY", "anon")
+    monkeypatch.delenv("RESEND_API_KEY", raising=False)
+    main._rate_limit_store.clear()
+
+    def fake_get(path, token):
+        if token != "good":
+            raise main.HTTPException(status_code=401, detail="invalid")
+        return {"id": "user-1"} if path == "/auth/v1/user" else memberships
+
+    monkeypatch.setattr(main, "_supabase_get", fake_get)
+
+
+def test_auth_ignores_role_header_when_supabase_configured(monkeypatch):
+    _use_supabase(monkeypatch, [{"role": "coach"}])
+    res = client.post("/api/notify/parent-email", headers={"X-User-Role": "coach"}, json=EMAIL_BODY)
+    assert res.status_code == 401
+
+
+def test_auth_rejects_bad_token(monkeypatch):
+    _use_supabase(monkeypatch, [{"role": "coach"}])
+    res = client.post("/api/notify/parent-email", headers={"Authorization": "Bearer bad"}, json=EMAIL_BODY)
+    assert res.status_code == 401
+
+
+def test_auth_rejects_user_without_staff_membership(monkeypatch):
+    _use_supabase(monkeypatch, [])
+    res = client.post("/api/notify/parent-email", headers={"Authorization": "Bearer good"}, json=EMAIL_BODY)
+    assert res.status_code == 403
+
+
+def test_auth_allows_coach(monkeypatch):
+    _use_supabase(monkeypatch, [{"role": "coach"}])
+    res = client.post("/api/notify/parent-email", headers={"Authorization": "Bearer good"}, json=EMAIL_BODY)
+    assert res.status_code == 200
+    assert res.json()["status"] == "dry_run"
+
+
+def test_real_email_is_refused_without_auth_configuration(monkeypatch):
+    import main
+
+    monkeypatch.delenv("SUPABASE_URL", raising=False)
+    monkeypatch.delenv("SUPABASE_ANON_KEY", raising=False)
+    monkeypatch.setenv("RESEND_API_KEY", "test-key")
+    main._rate_limit_store.clear()
+
+    def must_not_send(*args, **kwargs):
+        raise AssertionError("no outgoing request expected")
+
+    monkeypatch.setattr(main.urllib.request, "urlopen", must_not_send)
+    res = client.post("/api/notify/parent-email", json=EMAIL_BODY)
+    assert res.status_code == 503
+
+
 def test_subscription_state_machine():
     expired_trial = client.post(
         "/api/subscription/evaluate",

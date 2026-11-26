@@ -382,6 +382,47 @@ def test_backup_excludes_secrets(frontend_url):
         browser.close()
 
 
+def test_parent_email_request_carries_session_token(frontend_url):
+    setup = (
+        "localStorage.setItem('ivme_api_url', 'http://127.0.0.1:9');"
+        "localStorage.setItem('ivme_supabase_url', 'https://example.supabase.co');"
+        "localStorage.setItem('ivme_supabase_anon_key', 'anon');"
+        "window.supabase = {createClient: () => ({auth: {getSession: async () =>"
+        " ({data: {session: {access_token: 'session-token'}}})}})};"
+    )
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page, errors = _open(browser, f"{frontend_url}/app.html", setup)
+        page.evaluate(
+            """async () => {
+                window.__sent = null;
+                window.fetch = async (url, options) => {
+                    window.__sent = options.headers;
+                    return new Response(JSON.stringify({status: 'dry_run'}), {status: 200});
+                };
+                document.getElementById('parentReport').value = 'Rapor';
+                document.getElementById('parentEmailInput').value = 'veli@example.com';
+                await sendParentEmail();
+            }"""
+        )
+        assert page.evaluate("window.__sent.Authorization") == "Bearer session-token"
+        assert errors == []
+        browser.close()
+
+
+def test_logout_removes_supabase_session(frontend_url):
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page, _ = _open(
+            browser, f"{frontend_url}/app.html",
+            "localStorage.setItem('sb-example-auth-token', 'x');",
+        )
+        page.evaluate("logoutSession()")
+        page.wait_for_url("**/login.html")
+        assert page.evaluate("localStorage.getItem('sb-example-auth-token')") is None
+        browser.close()
+
+
 def test_admin_password_change_needs_current_password(frontend_url):
     with sync_playwright() as p:
         browser = p.chromium.launch()
