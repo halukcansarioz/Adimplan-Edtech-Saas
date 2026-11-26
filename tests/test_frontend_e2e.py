@@ -175,7 +175,29 @@ def test_parent_readonly_share_mode(frontend_url):
         assert not page.locator("#onboardingModal").is_visible()
         assert "Veli Raporu" in page.locator("body").inner_text()
         browser.close()
-        
+
+def test_login_and_register_flow(frontend_url):
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        context = browser.new_context(viewport={"width": 1280, "height": 800})
+        page = context.new_page()
+        page.goto(f"{frontend_url}/login.html#kayit", wait_until="load")
+        assert page.locator("#regForm").is_visible()
+        page.fill("#regName", "Test Ogrenci")
+        page.fill("#regEmail", "test@adimplan.com")
+        page.fill("#regPass", "123456")
+        page.check("#regKvkk")
+        page.locator("#regForm button[type='submit']").click()
+        page.wait_for_url("**/app.html")
+        assert "app.html" in page.url
+        page.goto(f"{frontend_url}/login.html", wait_until="load")
+        assert page.locator("#loginForm").is_visible()
+        page.fill("#loginEmail", "test@adimplan.com")
+        page.fill("#loginPass", "123456")
+        page.locator("#loginForm button[type='submit']").click()
+        page.wait_for_url("**/app.html")
+        assert "app.html" in page.url
+        browser.close()
 def test_weekly_grid_view_toggle(frontend_url):
     with sync_playwright() as p:
         browser = p.chromium.launch()
