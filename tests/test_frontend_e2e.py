@@ -284,6 +284,7 @@ def _open(browser, url, init_script=""):
     page.on("pageerror", lambda err: errors.append(str(err)))
     page.on("dialog", lambda dialog: dialog.accept())
     page.goto(url, wait_until="load")
+    page.evaluate("() => { const m = document.getElementById('onboardingModal'); if (m) { m.classList.remove('show', 'active', 'open'); m.style.display = 'none'; } }")
     return page, errors
 
 
@@ -315,7 +316,7 @@ def test_coach_module_does_not_blank_main_tabs(frontend_url):
         browser = p.chromium.launch()
         page, errors = _open(browser, f"{frontend_url}/app.html")
         page.click("[data-im=students]")
-        page.click(".sidebar-nav-item[data-tab='0']")
+        page.click(".im-nb[data-tab='0']")
         assert page.locator("#tab-0").is_visible()
         page.click(".sidebar-nav-item[data-tab='home']")
         assert page.locator("#tab-home").is_visible()

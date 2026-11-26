@@ -18,7 +18,7 @@ try:
 except ImportError:
     from backend.optical_parser import parse_optical_csv
 
-app = FastAPI(title="İvme Akademi EdTech Analytics API", version="0.1.0")
+app = FastAPI(title="Adimplan EdTech Analytics API", version="1.4.0")
 SENTRY_DSN = os.getenv("SENTRY_DSN")
 if SENTRY_DSN:
     try:
@@ -26,7 +26,15 @@ if SENTRY_DSN:
         sentry_sdk.init(dsn=SENTRY_DSN, traces_sample_rate=0.1)
     except ImportError:
         pass
-
+REDIS_URL = os.getenv("REDIS_URL")
+_redis_client = None
+if REDIS_URL:
+    try:
+        import redis
+        _redis_client = redis.Redis.from_url(REDIS_URL, decode_responses=True, socket_connect_timeout=1, socket_timeout=1)
+        _redis_client.ping()
+    except Exception:
+        _redis_client = None
 RATE_LIMIT_REQUESTS = 60
 RATE_LIMIT_WINDOW_SECONDS = 60
 # The e-mail endpoint can send real mail, so it gets a much tighter limit.
@@ -49,7 +57,18 @@ async def rate_limit_middleware(request: Request, call_next):
     limits = [(client_ip, RATE_LIMIT_REQUESTS)]
     if request.url.path == NOTIFY_PATH:
         limits.append((f"{client_ip}|notify", NOTIFY_RATE_LIMIT_REQUESTS))
-
+    if _redis_client is not None:
+        try:
+            for key, limit in limits:
+                rkey = f"adimplan:rl:{key}"
+                count = _redis_client.incr(rkey)
+                if count == 1:
+                    _redis_client.expire(rkey, RATE_LIMIT_WINDOW_SECONDS)
+                if count > limit:
+                    return JSONResponse(status_code=429, content={"detail": "Rate limit exceeded."})
+                return await call_next(request)
+        except Exception:
+            pass  
     if len(_rate_limit_store) >= RATE_LIMIT_MAX_KEYS:
         for key in [k for k, v in _rate_limit_store.items() if not v or v[-1] <= window_start]:
             del _rate_limit_store[key]
@@ -129,6 +148,13 @@ def _make_cache_key(prefix: str, payload: BaseModel) -> str:
 
 
 def _cache_get(key: str):
+    if _redis_client is not None:
+        try:
+            raw = _redis_client.get(f"adimplan:cache:{key}")
+            if raw is not None:
+                return json.loads(raw)
+        except Exception:
+            pass
     value = _response_cache.get(key)
     if value is not None:
         _response_cache.move_to_end(key)
@@ -136,6 +162,12 @@ def _cache_get(key: str):
 
 
 def _cache_put(key: str, value: dict) -> None:
+    if _redis_client is not None:
+        try:
+            _redis_client.setex(f"adimplan:cache:{key}", 3600, json.dumps(value, ensure_ascii=False))
+            return
+        except Exception:
+            pass
     _response_cache[key] = value
     _response_cache.move_to_end(key)
     while len(_response_cache) > CACHE_MAX_ENTRIES:
