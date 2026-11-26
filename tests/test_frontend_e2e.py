@@ -221,4 +221,49 @@ def test_weekly_grid_view_toggle(frontend_url):
         _assert_no_overflow(page)
         assert errors == []
         browser.close()
-        
+      
+def test_super_admin_desktop_and_mobile(frontend_url):
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            for vp_name, viewport in VIEWPORTS:
+                context = browser.new_context(viewport=viewport)
+                page = context.new_page()
+                errors = []
+                page.on("pageerror", lambda err: errors.append(str(err)))
+                page.goto(f"{frontend_url}/super-admin.html", wait_until="load")
+                assert errors == [], f"JS errors on super-admin ({vp_name}): {errors}"
+                _assert_no_overflow(page)
+                page.locator("#demoBtn").click()
+                page.locator("#app").wait_for(state="visible")
+                assert page.locator("#tab-subs").is_visible()
+                _assert_no_overflow(page)
+                page.locator(".nav-btn", has_text="CMS").click()
+                page.locator("#tab-cms").wait_for(state="visible")
+                assert page.locator("#tab-cms").is_visible()
+                _assert_no_overflow(page)
+                page.locator(".nav-btn", has_text="Abonelikler").click()
+                page.locator("#tab-subs").wait_for(state="visible")
+                assert page.locator("#tab-subs").is_visible()
+                assert errors == [], f"JS errors after tab switch ({vp_name}): {errors}"
+                context.close()
+
+def test_super_admin_cms_updates_landing(frontend_url):
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            context = browser.new_context(viewport={"width": 1440, "height": 900})
+            page = context.new_page()
+            errors = []
+            page.on("pageerror", lambda err: errors.append(str(err)))
+            page.goto(f"{frontend_url}/super-admin.html", wait_until="load")
+            page.locator("#demoBtn").click()
+            page.locator("#app").wait_for(state="visible")
+            page.locator(".nav-btn", has_text="CMS").click()
+            page.locator("#tab-cms").wait_for(state="visible")
+            custom_title = "E2E Ozel Hero Basligi 2026"
+            page.fill("#c-heroTitle", custom_title)
+            page.locator("#cmsForm button[type='submit']").click()
+            page.goto(f"{frontend_url}/index.html", wait_until="load")
+            assert custom_title in page.locator("h1").inner_text()
+            assert errors == [], f"JS errors on CMS landing update: {errors}"
+            context.close()
+            
