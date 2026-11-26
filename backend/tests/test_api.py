@@ -335,3 +335,94 @@ def test_request_id_header_present():
     assert "X-Request-Id" in res.headers
     assert len(res.headers["X-Request-Id"]) > 0
     
+
+def test_redis_cache_put_and_get(monkeypatch):
+    import main
+
+    store = {}
+
+    class FakeRedis:
+        def setex(self, key, ttl, value):
+            store[key] = (ttl, value)
+
+        def get(self, key):
+            entry = store.get(key)
+            return entry[1] if entry is not None else None
+
+    monkeypatch.setattr(main, "_redis_client", FakeRedis())
+    main._response_cache.clear()
+
+    payload = {"topic": "Türev", "score": 90}
+    main._cache_put("unit-test-key", payload)
+
+    assert "adimplan:cache:unit-test-key" in store
+    assert store["adimplan:cache:unit-test-key"][0] == 3600
+    assert "unit-test-key" not in main._response_cache
+    assert main._cache_get("unit-test-key") == payload
+
+
+def test_redis_cache_fallback_to_memory_on_error(monkeypatch):
+    import main
+
+    class BrokenRedis:
+        def setex(self, key, ttl, value):
+            raise ConnectionError("redis unavailable")
+
+        def get(self, key):
+            raise ConnectionError("redis unavailable")
+
+    monkeypatch.setattr(main, "_redis_client", BrokenRedis())
+    main._response_cache.clear()
+
+    payload = {"plan": "Matematik", "hours": 4}
+    main._cache_put("fallback-key", payload)
+
+    assert main._response_cache.get("fallback-key") == payload
+    assert main._cache_get("fallback-key") == payload
+
+
+def test_redis_rate_limit_exceeded_and_fallback_to_memory(monkeypatch):
+    import main
+
+    counts = {}
+
+    class FakeRedis:
+        def incr(self, key):
+            counts[key] = counts.get(key, 0) + 1
+            return counts[key]
+
+        def expire(self, key, ttl):
+            return True
+
+    class BrokenRedis:
+        def incr(self, key):
+            raise ConnectionError("redis unavailable")
+
+        def expire(self, key, ttl):
+            raise ConnectionError("redis unavailable")
+
+    req_payload = {
+        "status": "active",
+        "plan": "mini",
+        "trial_days_left": 0,
+        "current_students": 1,
+    }
+    monkeypatch.setattr(main, "RATE_LIMIT_REQUESTS", 2)
+    monkeypatch.setattr(main, "_redis_client", FakeRedis())
+    main._rate_limit_store.clear()
+
+    assert client.post("/api/subscription/evaluate", json=req_payload).status_code == 200
+    assert client.post("/api/subscription/evaluate", json=req_payload).status_code == 200
+    limited = client.post("/api/subscription/evaluate", json=req_payload)
+    assert limited.status_code == 429
+    assert limited.json() == {"detail": "Rate limit exceeded."}
+
+    monkeypatch.setattr(main, "_redis_client", BrokenRedis())
+    main._rate_limit_store.clear()
+
+    assert client.post("/api/subscription/evaluate", json=req_payload).status_code == 200
+    assert client.post("/api/subscription/evaluate", json=req_payload).status_code == 200
+    fallback_limited = client.post("/api/subscription/evaluate", json=req_payload)
+    assert fallback_limited.status_code == 429
+    main._rate_limit_store.clear()
+
