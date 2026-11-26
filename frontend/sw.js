@@ -1,10 +1,13 @@
-const CACHE_NAME = 'adimplan-pwa-v1';
+const CACHE_NAME = 'adimplan-pwa-v12';
 const PRECACHE_URLS = [
   './index.html',
   './login.html',
   './app.html',
   './admin.html',
-  './manifest.json'
+  './manifest.json',
+  './super-admin.html',
+  './404.html',
+  './favicon.svg'
 ];
 
 self.addEventListener('install', (event) => {
