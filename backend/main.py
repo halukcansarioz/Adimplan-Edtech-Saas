@@ -255,11 +255,12 @@ import urllib.error
 
 
 class BillingQuoteRequest(BaseModel):
-    plan: Literal["mini", "starter", "medium", "pro"]
+    plan: Literal["trial", "baslangic", "pro", "kurumsal", "mini", "starter", "medium"]
     billing_cycle: Literal["monthly", "yearly"] = "monthly"
 
 
-PLAN_CATALOG = {
+BILLING_PLANS = {"trial": {"monthly_price": 0.0, "student_quota": 5, "features": ["5 ogrenci kotasi", "14 gun ucretsiz deneme"]}, "baslangic": {"monthly_price": 499.0, "student_quota": 15, "features": ["15 ogrenci kotasi", "Temel YKS/LGS takip", "Haftalik rapor"]}, "pro": {"monthly_price": 999.0, "student_quota": 50, "features": ["50 ogrenci kotasi", "AI deneme analizi", "Veli PDF/E-posta raporu"]}, "kurumsal": {"monthly_price": 0.0, "student_quota": 99999, "features": ["99999 ogrenci kotasi", "Ozel kurum alan adi & PWA", "iyzico/PayTR tahsilat & API erisimi"]}}
+PLAN_CATALOG = {**BILLING_PLANS,
     "mini": {
         "monthly_price": 490.0,
         "student_quota": 15,
@@ -374,14 +375,14 @@ SUBSCRIPTION_PLAN_LIMITS = {
     "mini": 5,
     "starter": 25,
     "medium": 100,
-    "pro": 250,
+    "baslangic": BILLING_PLANS["baslangic"]["student_quota"], "pro": BILLING_PLANS["pro"]["student_quota"], "kurumsal": BILLING_PLANS["kurumsal"]["student_quota"],
     "enterprise": 10000,
 }
 
 
 class SubscriptionEvaluateRequest(BaseModel):
     status: Literal["trial", "active", "past_due", "read_only", "canceled"]
-    plan: Literal["trial", "mini", "starter", "medium", "pro", "enterprise"]
+    plan: Literal["trial", "baslangic", "pro", "kurumsal", "mini", "starter", "medium", "enterprise"]
     trial_days_left: int = Field(default=14, ge=0)
     current_students: int = Field(default=0, ge=0)
 
