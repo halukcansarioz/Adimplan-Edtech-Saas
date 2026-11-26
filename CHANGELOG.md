@@ -1,6 +1,14 @@
 # Değişiklik Günlüğü (Changelog)
 
 Bu dosya **İvme Akademi — Adımplan EdTech SaaS** projesindeki önemli sürüm değişikliklerini içerir.
+
+## [v1.5.0]
+
+### Eklenenler ve İyileştirmeler
+- **Kimlik Doğrulama ve Rol Bazlı Yetkilendirme (PR #2):** Gerçek giriş doğrulaması, rol bazlı yetki kontrolleri ve `005_role_based_access.sql` veritabanı migrasyonu eklendi.
+- **Bağımlılık Sabitleme, Redis ve CI/E2E Güncellemeleri (PR #3):** Üretim bağımlılıkları sabitlendi ve geliştirme bağımlılıkları `requirements-dev.txt` dosyasına ayrıldı; opsiyonel Redis tabanlı rate-limit ve önbellek desteği eklendi; Playwright E2E testleri, CI Node 24 güncellemesi ve `README.md` dokümantasyon güncellemesi yapıldı.
+- **Docker Güvenlik Sertleştirmesi:** `backend/Dockerfile` dosyasına non-root `appuser` kullanıcısı (`USER appuser`) ve `/health` uç noktasını doğrulayan Python tabanlı `HEALTHCHECK` yönergesi eklendi.
+
 ## [v1.4.0]
 
 ### Eklenenler
