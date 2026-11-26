@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Optional, Set, Literal
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import time
+import uuid
 from collections import defaultdict
 try:
     from optical_parser import parse_optical_csv
@@ -44,6 +45,45 @@ async def rate_limit_middleware(request: Request, call_next):
     return await call_next(request)
 
 
+@app.middleware("http")
+async def request_id_middleware(request: Request, call_next):
+    request_id = request.headers.get("X-Request-Id") or str(uuid.uuid4())
+    request.state.request_id = request_id
+    response = await call_next(request)
+    response.headers["X-Request-Id"] = request_id
+    return response
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    request_id = getattr(request.state, "request_id", None) or request.headers.get("X-Request-Id") or str(uuid.uuid4())
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "internal_server_error",
+            "message": "An unexpected internal server error occurred.",
+            "request_id": request_id,
+        },
+        headers={"X-Request-Id": request_id},
+    )
+
+
+ALLOWED_ROLES = {"super_admin", "institution_admin", "coach", "student", "parent"}
+COACH_OR_ADMIN_ROLES = {"super_admin", "institution_admin", "coach"}
+
+
+def require_role(request: Request, allowed_roles: Optional[Set[str]] = None) -> str:
+    role = (request.headers.get("X-User-Role") or "coach").strip().lower()
+    if role not in ALLOWED_ROLES:
+        raise HTTPException(status_code=403, detail=f"Invalid or unauthorized role: {role}")
+    target_roles = allowed_roles if allowed_roles is not None else ALLOWED_ROLES
+    if role not in target_roles:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Role '{role}' is not permitted to access this resource.",
+        )
+    return role
+    
 def _make_cache_key(prefix: str, payload: BaseModel) -> str:
     raw = json.dumps(payload.model_dump(), sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(f"{prefix}:{raw}".encode("utf-8")).hexdigest()
@@ -103,7 +143,8 @@ class OpticalCsvImportRequest(BaseModel):
     csv_text: str
 
 @app.post("/api/import-optical-csv")
-def import_optical_csv(payload: OpticalCsvImportRequest):
+def import_optical_csv(request: Request, payload: OpticalCsvImportRequest):
+    require_role(request, COACH_OR_ADMIN_ROLES)
     if not payload.csv_text or not payload.csv_text.strip():
       raise HTTPException(status_code=400, detail="csv_text is required.")
     return parse_optical_csv(payload.csv_text)
@@ -280,7 +321,8 @@ class ParentEmailRequest(BaseModel):
 
 
 @app.post("/api/notify/parent-email")
-def notify_parent_email(payload: ParentEmailRequest):
+def notify_parent_email(request: Request, payload: ParentEmailRequest):
+    require_role(request, COACH_OR_ADMIN_ROLES)
     subject = f"Adimplan Haftalik Veli Raporu - {payload.student_name}"
     resend_api_key = os.getenv("RESEND_API_KEY", "").strip()
 
@@ -326,3 +368,44 @@ def notify_parent_email(payload: ParentEmailRequest):
         raise HTTPException(status_code=502, detail=f"Resend API hatasi: {detail}")
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"E-posta gonderim hatasi: {str(exc)}")
+
+SUBSCRIPTION_PLAN_LIMITS = {
+    "trial": 5,
+    "mini": 5,
+    "starter": 25,
+    "medium": 100,
+    "pro": 250,
+    "enterprise": 10000,
+}
+
+
+class SubscriptionEvaluateRequest(BaseModel):
+    status: Literal["trial", "active", "past_due", "read_only", "canceled"]
+    plan: Literal["trial", "mini", "starter", "medium", "pro", "enterprise"]
+    trial_days_left: int = Field(default=14, ge=0)
+    current_students: int = Field(default=0, ge=0)
+
+
+@app.post("/api/subscription/evaluate")
+def evaluate_subscription(payload: SubscriptionEvaluateRequest):
+    student_limit = SUBSCRIPTION_PLAN_LIMITS[payload.plan]
+    remaining_seats = max(0, student_limit - payload.current_students)
+    effective_status = (
+        "read_only"
+        if payload.status == "trial" and payload.trial_days_left <= 0
+        else payload.status
+    )
+    can_write = effective_status in {"trial", "active"}
+    can_add_student = can_write and payload.current_students < student_limit
+    return {
+        "status": payload.status,
+        "effective_status": effective_status,
+        "plan": payload.plan,
+        "trial_days_left": payload.trial_days_left,
+        "current_students": payload.current_students,
+        "student_limit": student_limit,
+        "remaining_seats": remaining_seats,
+        "can_write": can_write,
+        "can_add_student": can_add_student,
+    }
+    
