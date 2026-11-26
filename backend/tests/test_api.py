@@ -216,3 +216,61 @@ def test_notify_parent_email_dry_run(monkeypatch):
     assert data["to"] == "veli@example.com"
     assert "Ali Yilmaz" in data["subject"]
     assert "250 soru" in data["preview"]   
+
+def test_rbac_blocks_student_on_coach_endpoints():
+    res_csv = client.post(
+        "/api/import-optical-csv",
+        headers={"X-User-Role": "student"},
+        json={"csv_text": "student_name,subject,topic,correct,wrong,empty\nAli Yilmaz,Matematik,Turev,6,4,0\n"},
+    )
+    assert res_csv.status_code == 403
+
+    res_email = client.post(
+        "/api/notify/parent-email",
+        headers={"X-User-Role": "student"},
+        json={
+            "parent_email": "veli@example.com",
+            "student_name": "Ali Yilmaz",
+            "report_text": "Haftalik rapor",
+        },
+    )
+    assert res_email.status_code == 403
+
+
+def test_subscription_state_machine():
+    expired_trial = client.post(
+        "/api/subscription/evaluate",
+        json={
+            "status": "trial",
+            "plan": "trial",
+            "trial_days_left": 0,
+            "current_students": 2,
+        },
+    )
+    assert expired_trial.status_code == 200
+    expired_data = expired_trial.json()
+    assert expired_data["effective_status"] == "read_only"
+    assert expired_data["can_write"] is False
+
+    full_mini = client.post(
+        "/api/subscription/evaluate",
+        json={
+            "status": "active",
+            "plan": "mini",
+            "trial_days_left": 0,
+            "current_students": 5,
+        },
+    )
+    assert full_mini.status_code == 200
+    mini_data = full_mini.json()
+    assert mini_data["student_limit"] == 5
+    assert mini_data["remaining_seats"] == 0
+    assert mini_data["can_add_student"] is False
+
+
+def test_request_id_header_present():
+    res = client.get("/health")
+    assert res.status_code == 200
+    assert "X-Request-Id" in res.headers
+    assert len(res.headers["X-Request-Id"]) > 0
+    
