@@ -176,3 +176,27 @@ def test_parent_readonly_share_mode(frontend_url):
         assert "Veli Raporu" in page.locator("body").inner_text()
         browser.close()
         
+def test_weekly_grid_view_toggle(frontend_url):
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page(viewport={"width": 390, "height": 844})
+        errors = []
+        page.on("pageerror", lambda err: errors.append(str(err)))
+        page.goto(f"{frontend_url}/app.html", wait_until="load")
+        modal = page.locator("#onboardingModal")
+        if modal.is_visible():
+            close_btn = page.locator("#onboardingModal button[onclick*='closeOnboardingModal']")
+            if close_btn.count() > 0:
+                close_btn.first.click()
+            else:
+                page.locator("#onboardingModal button").first.click()
+            modal.wait_for(state="hidden")
+        page.locator("#btnViewGrid").click()
+        grid = page.locator(".week-grid")
+        grid.wait_for(state="visible")
+        assert grid.is_visible()
+        assert page.locator(".week-grid .week-col").count() == 7
+        _assert_no_overflow(page)
+        assert errors == []
+        browser.close()
+        
