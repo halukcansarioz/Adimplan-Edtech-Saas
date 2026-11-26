@@ -58,7 +58,7 @@ async def rate_limit_middleware(request: Request, call_next):
     if request.url.path == NOTIFY_PATH:
         limits.append((f"{client_ip}|notify", NOTIFY_RATE_LIMIT_REQUESTS))
     if _redis_client is not None:
-        try:
+    try:
             for key, limit in limits:
                 rkey = f"adimplan:rl:{key}"
                 count = _redis_client.incr(rkey)
@@ -67,8 +67,8 @@ async def rate_limit_middleware(request: Request, call_next):
                 if count > limit:
                     return JSONResponse(status_code=429, content={"detail": "Rate limit exceeded."})
                 return await call_next(request)
-              except Exception:
-                pass  
+    except Exception:
+        pass  
     if len(_rate_limit_store) >= RATE_LIMIT_MAX_KEYS:
         for key in [k for k, v in _rate_limit_store.items() if not v or v[-1] <= window_start]:
             del _rate_limit_store[key]
