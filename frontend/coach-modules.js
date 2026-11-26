@@ -169,7 +169,7 @@
     if(q('im-psv')) q('im-psv').onclick=()=>{S.coach.name=q('im-pn').value.trim()||S.coach.name;save();render();toast('Profil kaydedildi.');};
   }
   function mount(){
-    const hh=window.location.hash||''; if(hh.startsWith('#davet=')||hh.startsWith('#veli=')) return;
+    const hh=window.location.hash||''; if(hh.startsWith('#davet=')||hh.startsWith('#veli=')){const om=document.getElementById('onboardingModal'); if(om){om.style.display='none'; om.classList.remove('show','open','active');} return;}
     addCss();
     const sb=document.querySelector('.app-sidebar, aside'); if(!sb||document.getElementById('ivme-mod-nav-wrap')) return;
     const nw=document.createElement('div'); nw.id='ivme-mod-nav-wrap'; nw.style.cssText='border-top:1px solid var(--border,#e2e8f0);margin-top:8px;padding:6px 8px 14px;';
