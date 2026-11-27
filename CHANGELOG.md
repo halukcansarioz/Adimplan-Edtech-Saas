@@ -1,6 +1,14 @@
 # Değişiklik Günlüğü (Changelog)
 
 Bu dosya **İvme Akademi — Adımplan EdTech SaaS** projesindeki önemli sürüm değişikliklerini içerir.
+
+## [v1.9.0]
+
+### Eklenenler ve İyileştirmeler
+- **Paylaşılabilir Haftalık Veli Raporu:** `parent-report.html` ile URL parametreleri üzerinden paylaşılabilir haftalık veli raporu sayfası eklendi.
+- **Koç Paneli Tek Tıkla Rapor Bağlantısı:** `frontend/coach-live-hooks.js` içindeki **Veli Raporu Üret** modalına `URLSearchParams` ile oluşturulan **Paylaşılabilir Raporu Aç** bağlantısı eklendi.
+- **PWA Güncellemesi:** Service worker önbellek sürümü `adimplan-pwa-v22` olarak güncellendi.
+- **Playwright E2E Testleri:** `parent-report.html` ve koç modalı rapor bağlantısı için yeni E2E testleri eklendi.
 ## [v1.8.1]
 
 ### Eklenenler ve İyileştirmeler
