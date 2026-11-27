@@ -224,6 +224,30 @@
             summary.style.margin = "0";
             summary.textContent = res && res.summary ? String(res.summary) : "Özet bilgisi mevcut değil.";
             container.appendChild(summary);
+
+          var params = new URLSearchParams();
+          params.set("student", res && res.student_name ? String(res.student_name) : "Öğrenci");
+          params.set("week", week);
+          params.set("done", qCount);
+          params.set("total", qCount);
+          params.set("pomodoro", pMins);
+          params.set("net", res && res.net_score !== undefined ? String(res.net_score) : "0");
+          params.set("note", summary.textContent);
+
+          var reportLink = document.createElement("a");
+          reportLink.href = "./parent-report.html?" + params.toString();
+          reportLink.target = "_blank";
+          reportLink.rel = "noopener noreferrer";
+          reportLink.textContent = "Paylaşılabilir Raporu Aç";
+          reportLink.style.display = "inline-block";
+          reportLink.style.marginTop = "12px";
+          reportLink.style.padding = "8px 12px";
+          reportLink.style.borderRadius = "8px";
+          reportLink.style.background = "#7c3aed";
+          reportLink.style.color = "#ffffff";
+          reportLink.style.textDecoration = "none";
+          reportLink.style.fontWeight = "600";
+          container.appendChild(reportLink);
           });
         })
         .catch(function (err) {
