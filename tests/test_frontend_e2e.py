@@ -78,23 +78,101 @@ def test_app_onboarding_and_all_tabs(frontend_url, vp_name, viewport):
         browser.close()
 
 
+SUPABASE = "https://mkimvsmlxassitajminz.supabase.co"
+
+
+def _mock_supabase(target, platform_admin=True, owner=True, password="correct-pass"):
+    """Fake Supabase Auth/REST so the admin gates can be tested offline."""
+    def handle(route):
+        request = route.request
+        headers = {"access-control-allow-origin": "*", "access-control-allow-headers": "*"}
+        if request.method == "OPTIONS":
+            return route.fulfill(status=204, headers=headers)
+        signed_in = request.headers.get("authorization") == "Bearer good-token"
+        status, body = 401, {}
+        if "/auth/v1/token" in request.url:
+            if request.post_data_json.get("password") == password:
+                status, body = 200, {"access_token": "good-token"}
+            else:
+                status = 400
+        elif "/auth/v1/user" in request.url and signed_in:
+            status, body = 200, {"id": "u1", "email": "boss@example.com",
+                                 "app_metadata": {"platform_admin": platform_admin}}
+        elif "/rest/v1/memberships" in request.url and signed_in:
+            status, body = 200, ([{"id": "m1"}] if owner else [])
+        route.fulfill(status=status, json=body, headers=headers)
+    target.route(SUPABASE + "/**", handle)
+
+
+def _admin_login(page, kind, password="correct-pass"):
+    email = "#adminEmailIn" if kind == "admin" else "#em"
+    secret = "#adminPassIn" if kind == "admin" else "#pw"
+    button = "#adminLoginBtn" if kind == "admin" else "#loginBtn"
+    page.fill(email, "boss@example.com")
+    page.fill(secret, password)
+    page.click(button)
+
+
 @pytest.mark.parametrize("vp_name,viewport", VIEWPORTS)
-def test_admin_demo_login(frontend_url, vp_name, viewport):
+def test_admin_owner_login(frontend_url, vp_name, viewport):
     with sync_playwright() as p:
         browser = p.chromium.launch()
         context = browser.new_context(viewport=viewport)
+        _mock_supabase(context)
         page = context.new_page()
         errors = []
         page.on("pageerror", lambda err: errors.append(str(err)))
         page.goto(f"{frontend_url}/admin.html", wait_until="load")
 
-        page.locator("button[onclick*='demoLogin']").click()
+        _admin_login(page, "admin")
         page.locator("#appShell").wait_for(state="visible")
         assert page.locator("#gate").is_hidden()
         _assert_no_overflow(page)
+        page.reload(wait_until="load")
+        page.locator("#appShell").wait_for(state="visible")
+        page.evaluate("logoutAdmin()")
+        page.reload(wait_until="load")
+        assert page.locator("#gate").is_visible()
 
         assert errors == [], f"JS errors on admin.html ({vp_name}): {errors}"
         browser.close()
+
+
+@pytest.mark.parametrize("page_name,kind,app", [
+    ("admin.html", "admin", "#appShell"), ("super-admin.html", "super", "#app")])
+@pytest.mark.parametrize("password,message", [
+    ("wrong", "hatalı"), ("correct-pass", "yetkisi yok")])
+def test_admin_gates_reject(frontend_url, page_name, kind, app, password, message):
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            context = browser.new_context()
+            _mock_supabase(context, platform_admin=False, owner=False)
+            page = context.new_page()
+            page.goto(f"{frontend_url}/{page_name}", wait_until="load")
+            _admin_login(page, kind, password)
+            page.locator("#gateErr").wait_for(state="visible")
+            assert message in page.locator("#gateErr").inner_text()
+            assert page.locator(app).is_hidden()
+
+
+@pytest.mark.parametrize("page_name,app", [("admin.html", "#appShell"), ("super-admin.html", "#app")])
+def test_admin_gates_ignore_forged_session(frontend_url, page_name, app):
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            context = browser.new_context()
+            _mock_supabase(context)
+            context.add_init_script(
+                "sessionStorage.setItem('ivme_admin_auth','1');"
+                "sessionStorage.setItem('ivme_sa_auth_v1','1');"
+                "sessionStorage.setItem('adimplan_auth_owner','forged');"
+                "sessionStorage.setItem('adimplan_auth_platform','forged');"
+                "localStorage.setItem('ivme_admin_pass','old-secret');")
+            page = context.new_page()
+            page.goto(f"{frontend_url}/{page_name}", wait_until="networkidle")
+            assert page.locator("#gate").is_visible()
+            assert page.locator(app).is_hidden()
+            assert page.evaluate("localStorage.getItem('ivme_admin_pass')") is None
+
 
 def test_dark_mode_and_tools_dropdown(frontend_url):
     with sync_playwright() as p:
@@ -230,13 +308,14 @@ def test_super_admin_desktop_and_mobile(frontend_url):
         with p.chromium.launch() as browser:
             for vp_name, viewport in VIEWPORTS:
                 context = browser.new_context(viewport=viewport)
+                _mock_supabase(context)
                 page = context.new_page()
                 errors = []
                 page.on("pageerror", lambda err: errors.append(str(err)))
                 page.goto(f"{frontend_url}/super-admin.html", wait_until="load")
                 assert errors == [], f"JS errors on super-admin ({vp_name}): {errors}"
                 _assert_no_overflow(page)
-                page.locator("#demoBtn").click()
+                _admin_login(page, "super")
                 page.locator("#app").wait_for(state="visible")
                 assert page.locator("#tab-subs").is_visible()
                 _assert_no_overflow(page)
@@ -254,11 +333,12 @@ def test_super_admin_cms_updates_landing(frontend_url):
     with sync_playwright() as p:
         with p.chromium.launch() as browser:
             context = browser.new_context(viewport={"width": 1440, "height": 900})
+            _mock_supabase(context)
             page = context.new_page()
             errors = []
             page.on("pageerror", lambda err: errors.append(str(err)))
             page.goto(f"{frontend_url}/super-admin.html", wait_until="load")
-            page.locator("#demoBtn").click()
+            _admin_login(page, "super")
             page.locator("#app").wait_for(state="visible")
             page.locator(".nav-btn", has_text="CMS").click()
             page.locator("#tab-cms").wait_for(state="visible")
@@ -420,21 +500,6 @@ def test_logout_removes_supabase_session(frontend_url):
         page.evaluate("logoutSession()")
         page.wait_for_url("**/login.html")
         assert page.evaluate("localStorage.getItem('sb-example-auth-token')") is None
-        browser.close()
-
-
-def test_admin_password_change_needs_current_password(frontend_url):
-    with sync_playwright() as p:
-        browser = p.chromium.launch()
-        page, _ = _open(
-            browser, f"{frontend_url}/admin.html",
-            "localStorage.setItem('ivme_admin_pass', 'current-pass');",
-        )
-        page.evaluate("toggleSetup()")
-        page.fill("#adminPassIn", "wrong")
-        page.fill("#newPassIn", "attacker-pass")
-        page.click("button[onclick*=loginAdmin]")
-        assert page.evaluate("localStorage.getItem('ivme_admin_pass')") == "current-pass"
         browser.close()
 
 
