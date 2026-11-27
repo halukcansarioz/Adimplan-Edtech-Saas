@@ -40,5 +40,11 @@
         }
       ]
     }
+  ],
+  "rewrites": [
+    { "source": "/login", "destination": "/login.html" },
+    { "source": "/reset-password", "destination": "/login.html" },
+    { "source": "/auth/callback", "destination": "/login.html" },
+    { "source": "/confirm", "destination": "/login.html" }
   ]
 }
