@@ -840,3 +840,23 @@ def test_parent_report_renders_url_params(frontend_url):
             assert "%90" in page.locator("#kpiCompletion").inner_text()
             assert page_errors == []
 
+
+def test_optical_reader_loads_and_scores(frontend_url):
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            page = _offline_context(browser).new_page()
+            page_errors = []
+            page.on("pageerror", lambda exc: page_errors.append(str(exc)))
+            resp = page.goto(
+                f"{frontend_url}/optical-reader.html",
+                wait_until="domcontentloaded",
+            )
+            assert resp is not None and resp.status == 200
+            table = page.locator("#resultsTable")
+            table.wait_for(state="visible", timeout=5000)
+            assert table.is_visible()
+            rows = page.locator("#resultsBody tr")
+            assert rows.count() >= 3
+            assert "Ahmet Yılmaz" in page.locator("#resultsBody").inner_text()
+            assert page_errors == []
+
