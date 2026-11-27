@@ -284,7 +284,6 @@ def _open(browser, url, init_script=""):
     page.on("pageerror", lambda err: errors.append(str(err)))
     page.on("dialog", lambda dialog: dialog.accept())
     page.goto(url, wait_until="load")
-    page.evaluate("() => { const m = document.getElementById('onboardingModal'); if (m) { m.classList.remove('show', 'active', 'open'); m.style.display = 'none'; } }")
     return page, errors
 
 
@@ -436,4 +435,49 @@ def test_admin_password_change_needs_current_password(frontend_url):
         page.fill("#newPassIn", "attacker-pass")
         page.click("button[onclick*=loginAdmin]")
         assert page.evaluate("localStorage.getItem('ivme_admin_pass')") == "current-pass"
+        browser.close()
+
+
+def test_onboarding_does_not_block_returning_user(frontend_url):
+    """No forced hiding here: a stray CSS brace once kept this window over the whole app."""
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page, errors = _open(browser, f"{frontend_url}/app.html")
+        assert not page.locator("#onboardingModal").is_visible()
+        page.click(".sidebar-nav-item[data-tab='home']", timeout=3000)
+        page.evaluate("openOnboardingModal()")
+        assert page.locator("#onboardingModal").is_visible()
+        assert errors == []
+        browser.close()
+
+
+def test_student_detail_opens_every_tab(frontend_url):
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page, errors = _open(browser, f"{frontend_url}/app.html")
+        page.click("[data-im=students]")
+        page.locator("[data-go^='student_detail:']").first.click()
+        tabs = page.eval_on_selector_all("[data-sdt]", "els => els.map(e => e.dataset.sdt)")
+        assert len(tabs) >= 9
+        for tab in tabs:
+            page.click(f"[data-sdt='{tab}']")
+            assert page.locator(f"[data-sdt='{tab}'].on").count() == 1
+        assert errors == []
+        browser.close()
+
+
+def test_coach_profile_keeps_no_password_and_can_log_out(frontend_url):
+    old = (
+        "localStorage.setItem('ivme_coach_modules_v1', JSON.stringify("
+        "{coach: {name: 'K', email: 'k@example.com', pass: 'plain-secret'}}));"
+    )
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page, errors = _open(browser, f"{frontend_url}/app.html", old)
+        assert "plain-secret" not in page.evaluate("localStorage.getItem('ivme_coach_modules_v1')")
+        page.click("[data-im=profile]")
+        assert page.locator("#ivme-mod-host input[type=password]").count() == 0
+        page.click("#im-logout-btn")
+        page.wait_for_url("**/login.html")
+        assert errors == []
         browser.close()

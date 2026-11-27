@@ -47,6 +47,17 @@ _rate_limit_store: Dict[str, List[float]] = {}
 _response_cache: "OrderedDict[str, dict]" = OrderedDict()
 
 
+def _redis_limit_exceeded(limits) -> bool:
+    for key, limit in limits:
+        rkey = f"adimplan:rl:{key}"
+        count = _redis_client.incr(rkey)
+        if count == 1:
+            _redis_client.expire(rkey, RATE_LIMIT_WINDOW_SECONDS)
+        if count > limit:
+            return True
+    return False
+
+
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
     # Health probes and CORS preflights must not consume the quota.
@@ -60,16 +71,14 @@ async def rate_limit_middleware(request: Request, call_next):
         limits.append((f"{client_ip}|notify", NOTIFY_RATE_LIMIT_REQUESTS))
     if _redis_client is not None:
         try:
-            for key, limit in limits:
-                rkey = f"adimplan:rl:{key}"
-                count = _redis_client.incr(rkey)
-                if count == 1:
-                    _redis_client.expire(rkey, RATE_LIMIT_WINDOW_SECONDS)
-                if count > limit:
-                    return JSONResponse(status_code=429, content={"detail": "Rate limit exceeded."})
-                return await call_next(request)
+            exceeded = _redis_limit_exceeded(limits)
         except Exception:
-            pass  
+            pass  # Redis unavailable: fall back to the in-memory limiter below
+        else:
+            if exceeded:
+                return JSONResponse(status_code=429, content={"detail": "Rate limit exceeded."})
+            return await call_next(request)
+
     if len(_rate_limit_store) >= RATE_LIMIT_MAX_KEYS:
         for key in [k for k, v in _rate_limit_store.items() if not v or v[-1] <= window_start]:
             del _rate_limit_store[key]
