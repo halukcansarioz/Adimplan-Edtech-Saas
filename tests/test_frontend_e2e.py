@@ -27,6 +27,18 @@ def frontend_url():
         server.server_close()
 
 
+SIGNED_IN = "localStorage.setItem('ivme_user', JSON.stringify({name: 'Test Koc', role: 'Bireysel Koç'}));"
+
+
+def _signed_in_page(browser, **kwargs):
+    """A page whose first load already has a signed-in user."""
+    context = browser.new_context(**kwargs)
+    context.add_init_script(
+        "if (!sessionStorage.getItem('_signed')) { sessionStorage.setItem('_signed', '1');" + SIGNED_IN + "}"
+    )
+    return context.new_page()
+
+
 def _assert_no_overflow(page):
     ok = page.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth + 2")
     assert ok, "Horizontal overflow detected"
@@ -51,8 +63,8 @@ def test_pages_load_without_js_errors_or_overflow(frontend_url, vp_name, viewpor
 def test_app_onboarding_and_all_tabs(frontend_url, vp_name, viewport):
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        context = browser.new_context(viewport=viewport)
-        page = context.new_page()
+        page = _signed_in_page(browser, viewport=viewport)
+        context = page.context
         errors = []
         page.on("pageerror", lambda err: errors.append(str(err)))
         page.goto(f"{frontend_url}/app.html", wait_until="load")
@@ -99,7 +111,7 @@ def test_admin_demo_login(frontend_url, vp_name, viewport):
 def test_dark_mode_and_tools_dropdown(frontend_url):
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        page = browser.new_page(viewport={"width": 1280, "height": 800})
+        page = _signed_in_page(browser, viewport={"width": 1280, "height": 800})
         page.goto(f"{frontend_url}/app.html", wait_until="load")
         modal = page.locator("#onboardingModal")
         if modal.is_visible():
@@ -120,7 +132,7 @@ def test_dark_mode_and_tools_dropdown(frontend_url):
 def test_tyt_score_calculator(frontend_url):
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        page = browser.new_page(viewport={"width": 1280, "height": 800})
+        page = _signed_in_page(browser, viewport={"width": 1280, "height": 800})
         page.goto(f"{frontend_url}/app.html", wait_until="load")
         modal = page.locator("#onboardingModal")
         if modal.is_visible():
@@ -203,7 +215,7 @@ def test_login_and_register_flow(frontend_url):
 def test_weekly_grid_view_toggle(frontend_url):
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        page = browser.new_page(viewport={"width": 390, "height": 844})
+        page = _signed_in_page(browser, viewport={"width": 390, "height": 844})
         errors = []
         page.on("pageerror", lambda err: errors.append(str(err)))
         page.goto(f"{frontend_url}/app.html", wait_until="load")
@@ -277,7 +289,7 @@ def _open(browser, url, init_script=""):
     context.route(lambda u: not u.startswith("http://127.0.0.1"), lambda route: route.abort())
     context.add_init_script(
         "if (!sessionStorage.getItem('_init')) { sessionStorage.setItem('_init', '1');"
-        "localStorage.setItem('ivme_onboarding_done', '1');" + init_script + "}"
+        "localStorage.setItem('ivme_onboarding_done', '1');" + SIGNED_IN + init_script + "}"
     )
     page = context.new_page()
     errors = []
@@ -481,3 +493,74 @@ def test_coach_profile_keeps_no_password_and_can_log_out(frontend_url):
         page.wait_for_url("**/login.html")
         assert errors == []
         browser.close()
+
+
+def test_app_requires_login_and_demo_still_works(frontend_url):
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            page = browser.new_page()
+            page.goto(f"{frontend_url}/app.html")
+            page.wait_for_url("**/login.html")
+            page.click("#demoBtn")
+            page.wait_for_url("**/app.html")
+            page.wait_for_load_state("load")
+            assert page.locator("#sessionLockOverlay").is_hidden()
+
+
+def test_idle_session_locks_and_reload_does_not_bypass(frontend_url):
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            page, errors = _open(browser, f"{frontend_url}/app.html")
+            page.evaluate("localStorage.setItem('ivme_last_active', String(Date.now() - 31 * 60 * 1000))")
+            page.mouse.move(50, 50)
+            page.locator("#sessionLockOverlay").wait_for(state="visible")
+            assert page.evaluate("localStorage.getItem('ivme_user')") is None
+            page.reload()
+            page.wait_for_url("**/login.html")
+            assert errors == []
+
+
+def test_stale_session_is_rejected_on_load(frontend_url):
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            context = browser.new_context()
+            context.add_init_script(
+                "if (!sessionStorage.getItem('_i')) { sessionStorage.setItem('_i', '1');" + SIGNED_IN +
+                "localStorage.setItem('ivme_last_active', '1000');}")
+            page = context.new_page()
+            page.goto(f"{frontend_url}/app.html")
+            page.wait_for_url("**/login.html")
+
+
+def test_invite_hash_cannot_skip_login_where_coach_data_exists(frontend_url):
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            page, _ = _open(browser, f"{frontend_url}/app.html")
+            assert page.evaluate("localStorage.getItem('adimplan_v2_state') !== null || (save(), true)")
+            page.evaluate("logoutSession()")
+            page.wait_for_url("**/login.html")
+            page.goto(f"{frontend_url}/app.html#davet=zeynep")
+            page.wait_for_url("**/login.html")
+
+
+def test_fresh_invite_survives_reload_but_needs_the_link(frontend_url):
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            page = browser.new_page()
+            page.goto(f"{frontend_url}/app.html#davet=zeynep")
+            page.reload()
+            assert "app.html#davet" in page.url
+            page.goto(f"{frontend_url}/login.html")
+            page.goto(f"{frontend_url}/app.html")
+            page.wait_for_url("**/login.html")
+
+
+def test_blocked_visit_does_not_break_a_later_invite(frontend_url):
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            page = browser.new_page()
+            page.goto(f"{frontend_url}/app.html")
+            page.wait_for_url("**/login.html")
+            page.goto(f"{frontend_url}/app.html#davet=zeynep")
+            page.wait_for_load_state("load")
+            assert "app.html#davet" in page.url
