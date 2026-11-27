@@ -101,3 +101,25 @@ def test_sessions_ledger_active_and_depleted():
     assert res_depleted.status_code == 200
     assert res_depleted.json()["remaining_balance"] == 0
     assert res_depleted.json()["status"] == "depleted"
+
+def test_get_student_session_ledger():
+    response = client.get("/api/v1/sessions/ledger/stu-42")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["coach_id"] == "system"
+    assert data["student_id"] == "stu-42"
+    assert data["total_added"] == 0
+    assert data["total_used"] == 0
+    assert data["remaining_balance"] == 0
+    assert data["status"] == "depleted"
+
+def test_get_system_capabilities():
+    response = client.get("/api/v1/system/capabilities")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "ok"
+    assert data["exam_group_count"] == 8
+    assert "TYT" in data["exam_groups"]
+    assert "study_plan" in data["active_modules"]
+    assert "pwa_offline_sync" in data["active_modules"]
+    
