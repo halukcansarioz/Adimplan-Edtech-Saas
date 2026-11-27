@@ -629,3 +629,18 @@ def test_blocked_visit_does_not_break_a_later_invite(frontend_url):
             page.goto(f"{frontend_url}/app.html#davet=zeynep")
             page.wait_for_load_state("load")
             assert "app.html#davet" in page.url
+
+def test_new_v16_pages_load_without_errors(frontend_url):
+    pages = ["program.html", "student.html", "coach-panel.html", "pricing.html"]
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            for page_name in pages:
+                context = browser.new_context()
+                page = context.new_page()
+                errors = []
+                page.on("pageerror", lambda err, errs=errors: errs.append(str(err)))
+                resp = page.goto(f"{frontend_url}/{page_name}", wait_until="load")
+                assert resp is not None and resp.status == 200
+                assert page.inner_text("body").strip() != ""
+                assert errors == []
+                context.close()

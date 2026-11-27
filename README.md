@@ -34,7 +34,11 @@ Multi-tenant EdTech coaching and student tracking SaaS (**v1.0**) featuring **27
 | **Login & Onboarding** | `/login.html` | Role-based authentication & demo access |
 | **Coaching Workspace** | `/app.html` | Main 27-module student, coach, and parent coaching workspace |
 | **Admin Console** | `/admin.html` | Multi-tenant institutional management, coach handover, and analytics |
-| **Super Admin / CMS Console** | `/super-admin.html` | Super admin / CMS console (Süper yönetici / CMS konsolu) 
+| **Super Admin / CMS Console** | `/super-admin.html` | Super admin / CMS console (Süper yönetici / CMS konsolu) | 
+| **Weekly Program** | `/program.html` | Weekly study program & schedule (Haftalık Program) |
+| **Coach Panel** | `/coach-panel.html` | Coach management & student tracking panel (Koç Paneli) |
+| **Student Panel** | `/student.html` | Student dashboard & progress tracking (Öğrenci Paneli) |
+| **Pricing** | `/pricing.html` | Subscription plans & pricing (Fiyatlandırma) |
 ---
 
 # 📌 About the Project
