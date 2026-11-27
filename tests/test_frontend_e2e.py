@@ -644,3 +644,43 @@ def test_new_v16_pages_load_without_errors(frontend_url):
                 assert page.inner_text("body").strip() != ""
                 assert errors == []
                 context.close()
+
+
+def test_demo_session_cannot_see_or_change_real_data(frontend_url):
+    import json
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            page, errors = _open(browser, f"{frontend_url}/app.html")
+            page.evaluate("state.students[0].name = 'GERCEK-OGRENCI'; save();"
+                          "localStorage.setItem('ivme_workspace_key', 'REAL-WORKSPACE-KEY');"
+                          "localStorage.setItem('supabase_anon_key', 'REAL-SUPA-KEY')")
+            real = page.evaluate("localStorage.getItem('adimplan_v2_state')")
+            assert "GERCEK-OGRENCI" in real
+            page.evaluate("logoutSession()")
+            page.wait_for_url("**/login.html")
+            page.click("#demoBtn")
+            page.wait_for_url("**/app.html")
+            page.wait_for_load_state("load")
+            assert "GERCEK-OGRENCI" not in page.content()
+            assert page.evaluate("localStorage.getItem('ivme_workspace_key')") is None
+            assert page.evaluate("localStorage.getItem('supabase_anon_key')") is None
+            page.evaluate("state.students[0].name = 'DEMO-DEGISIKLIK'; save()")
+            with page.expect_download() as info:
+                page.evaluate("exportBackup()")
+            backup = json.dumps(json.load(open(info.value.path(), encoding="utf-8")))
+            assert "DEMO-DEGISIKLIK" in backup and "GERCEK-OGRENCI" not in backup
+            page.evaluate("logoutSession()")
+            page.wait_for_url("**/login.html")
+            assert page.evaluate("localStorage.getItem('adimplan_v2_state')") == real
+            assert page.evaluate("localStorage.getItem('ivme_workspace_key')") == "REAL-WORKSPACE-KEY"
+            assert errors == []
+
+
+def test_real_backup_still_exports_real_data(frontend_url):
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            page, _ = _open(browser, f"{frontend_url}/app.html")
+            page.evaluate("state.students[0].name = 'GERCEK-OGRENCI'; save()")
+            with page.expect_download() as info:
+                page.evaluate("exportBackup()")
+            assert "GERCEK-OGRENCI" in open(info.value.path(), encoding="utf-8").read()
