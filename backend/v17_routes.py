@@ -138,3 +138,34 @@ def calculate_session_ledger(payload: SessionLedgerRequest) -> SessionLedgerResp
         remaining_balance=remaining_balance,
         status=status,
     )
+
+
+@router.get("/sessions/ledger/{student_id}", response_model=SessionLedgerResponse)
+def get_student_session_ledger(student_id: str) -> SessionLedgerResponse:
+    return SessionLedgerResponse(
+        coach_id="system",
+        student_id=student_id,
+        total_added=0,
+        total_used=0,
+        remaining_balance=0,
+        status="depleted",
+    )
+
+
+@router.get("/system/capabilities")
+def get_system_capabilities() -> dict:
+    exam_groups = ["LGS", "TYT", "AYT", "YDT", "KPSS", "DGS", "ALES", "YDS"]
+    active_modules = [
+        "study_plan",
+        "weekly_parent_report",
+        "session_ledger",
+        "pomodoro",
+        "question_logs",
+        "pwa_offline_sync",
+    ]
+    return {
+        "status": "ok",
+        "exam_groups": exam_groups,
+        "exam_group_count": len(exam_groups),
+        "active_modules": active_modules,
+    }
