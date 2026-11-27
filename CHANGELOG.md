@@ -1,6 +1,20 @@
 # Değişiklik Günlüğü (Changelog)
 
 Bu dosya **İvme Akademi — Adımplan EdTech SaaS** projesindeki önemli sürüm değişikliklerini içerir.
+## [v1.8.0]
+
+### Eklenenler ve İyileştirmeler
+- **Canlı Senkronizasyon ve Hook'lar:** `supabase-sync.js`, `coach-live-hooks.js` ve `student-live-hooks.js` entegrasyonları eklendi.
+- **PWA Güncellemesi:** Service worker önbellek sürümü `adimplan-pwa-v20` olarak güncellendi.
+- **Yeni Okuma ve Yetenek Uç Noktaları:** Yeni okuma (API reads) ve capabilities uç noktaları eklendi.
+
+## [v1.7.0]
+
+### Eklenenler ve İyileştirmeler
+- **Yeni Ön Panel ve Rotalar:** Yeni ön panel arayüzü ve `v17_routes.py` API rotaları eklendi.
+- **Veritabanı Migrasyonu:** `006_full_panels_rls.sql` tam panel RLS veritabanı migrasyonu eklendi.
+- **Docker Compose Kurulumu:** Yerel geliştirme ve çalıştırma için `docker-compose.yml` yapılandırması eklendi.
+
 ## [v1.6.0]
 ### Eklenenler ve İyileştirmeler
 - **Yeni Sayfalar ve PWA Önbellekleme:** `program.html`, `student.html`, `coach-panel.html` ve `pricing.html` sayfaları eklendi; `index.html` navigasyon bağlantıları güncellendi ve `frontend/sw.js` önbellek listesine eklendi.
