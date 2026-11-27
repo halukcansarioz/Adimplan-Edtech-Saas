@@ -1,4 +1,4 @@
-const CACHE_NAME = 'adimplan-v13;
+const CACHE_NAME = 'adimplan-v13';
 const PRECACHE_URLS = [
   './', './index.html',
   './login.html',
