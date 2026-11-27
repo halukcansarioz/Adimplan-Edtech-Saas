@@ -684,3 +684,23 @@ def test_real_backup_still_exports_real_data(frontend_url):
             with page.expect_download() as info:
                 page.evaluate("exportBackup()")
             assert "GERCEK-OGRENCI" in open(info.value.path(), encoding="utf-8").read()
+
+
+def test_program_page_shows_typed_html_as_text(frontend_url):
+    payload = '<img src=x onerror="window.__xss=1">'
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            context = browser.new_context()
+            context.route(lambda u: not u.startswith("http://127.0.0.1"), lambda route: route.abort())
+            context.add_init_script("window.tailwind = {};")
+            page = context.new_page()
+            page.goto(f"{frontend_url}/program.html")
+            page.evaluate("openTaskModal(null, null)")
+            page.evaluate("([a]) => { document.getElementById('task-topic').value = a;"
+                          " document.getElementById('task-target').value = a; }", [payload])
+            before = page.evaluate("state.tasks.length")
+            page.evaluate("saveTaskFromModal()")
+            page.wait_for_timeout(500)
+            assert page.evaluate("state.tasks.length") > before
+            assert page.evaluate("window.__xss || 0") == 0
+            assert payload in page.locator("body").inner_text()
