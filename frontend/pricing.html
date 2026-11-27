@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AdımPlan | Fiyatlandırma, Çözümler, Rol Girişi ve Yasal Metinler</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+    .ticker-track { display: flex; width: max-content; animation: ticker 24s linear infinite; }
+    .ticker-track:hover { animation-play-state: paused; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased">
+  <!-- Hareketli Duyuru Şeridi -->
+  <div class="bg-indigo-700 text-white text-xs sm:text-sm py-2 overflow-hidden">
+    <div class="ticker-track gap-12 whitespace-nowrap font-medium px-4">
+      <span>14 Gün Ücretsiz Deneme — Kredi kartı gerekmez, otomatik ücret çekilmez, süre sonunda salt-okunur koruma.</span>
+      <span>Tüm paket fiyatlarına %20 KDV dahildir.</span>
+      <span>8 Sınav Grubu: YKS, LGS, KPSS, MEBAGS/ÖABT, ALES, DGS, TUS, YDS tam destek.</span>
+      <span>14 Gün Ücretsiz Deneme — Kredi kartı gerekmez, otomatik ücret çekilmez, süre sonunda salt-okunur koruma.</span>
+    </div>
+  </div>
+
+  <!-- Üst Menü -->
+  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <a href="./index.html" class="font-extrabold text-xl tracking-tight text-indigo-700">AdımPlan</a>
+      <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+        <a href="#fiyatlandirma" class="hover:text-indigo-700">Fiyatlandırma</a>
+        <a href="#sinavlar" class="hover:text-indigo-700">Sınav Grupları</a>
+        <a href="#cozumler" class="hover:text-indigo-700">Çözümler</a>
+        <a href="#karsilastirma" class="hover:text-indigo-700">Panel Karşılaştırması</a>
+        <a href="#giris" class="hover:text-indigo-700">Rol Girişi</a>
+        <a href="#sss" class="hover:text-indigo-700">SSS</a>
+      </nav>
+      <a href="#giris" class="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition">14 Gün Ücretsiz Dene</a>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-12 space-y-20">
+    <!-- Hero & 14 Gün Deneme Vurgusu -->
+    <section class="text-center max-w-3xl mx-auto space-y-4">
+      <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+        14 Gün Ücretsiz Deneme • Kredi Kartı Gerekmez
+      </span>
+      <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900">
+        Eğitim Koçluğu ve Kurum Yönetimi İçin Şeffaf Fiyatlandırma
+      </h1>
+      <p class="text-slate-600 text-base sm:text-lg">
+        Tüm paketlerde 14 gün ücretsiz deneme sunulur. Kredi kartı gerekmez, deneme bitiminde otomatik ücret çekilmez; hesabınız veri kaybı olmadan salt-okunur korumaya alınır.
+      </p>
+      <div class="flex flex-wrap justify-center gap-3 pt-2 text-xs sm:text-sm text-slate-700">
+        <span class="px-3 py-1.5 bg-white rounded-lg border border-slate-200 font-medium">✓ Kredi kartı gerekmez</span>
+        <span class="px-3 py-1.5 bg-white rounded-lg border border-slate-200 font-medium">✓ Otomatik ücret çekilmez</span>
+        <span class="px-3 py-1.5 bg-white rounded-lg border border-slate-200 font-medium">✓ Süre sonunda salt-okunur koruma</span>
+      </div>
+    </section>
+
+    <!-- 5 Paketli Fiyatlandırma Tablosu (KDV Dahil) -->
+    <section id="fiyatlandirma" class="space-y-8">
+      <div class="text-center space-y-2">
+        <h2 class="text-2xl sm:text-3xl font-bold">5 Paketli Fiyatlandırma Tablosu (KDV Dahil)</h2>
+        <p class="text-slate-600 text-sm">Öğrenci kapasitenize göre en uygun paketi seçin; tüm tutarlara KDV dahildir.</p>
+      </div>
+      <div id="pricing-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5"></div>
+    </section>
+
+    <!-- 8 Sınav Grubu -->
+    <section id="sinavlar" class="space-y-6">
+      <div class="text-center space-y-2">
+        <h2 class="text-2xl sm:text-3xl font-bold">8 Sınav Grubu ile Tam Müfredat Uyumu</h2>
+        <p class="text-slate-600 text-sm">Hazır konu ağaçları, deneme net takibi ve hedef puan analizleri.</p>
+      </div>
+      <div id="exams-grid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3"></div>
+    </section>
+
+    <!-- 5 Çözüm Sekmesi -->
+    <section id="cozumler" class="space-y-6">
+      <div class="text-center space-y-2">
+        <h2 class="text-2xl sm:text-3xl font-bold">İhtiyacınıza Özel 5 Çözüm</h2>
+        <p class="text-slate-600 text-sm">Bireysel koçluktan çok şubeli dershane otomasyonuna kadar tek platform.</p>
+      </div>
+      <div id="solution-tabs" class="flex flex-wrap justify-center gap-2" role="tablist"></div>
+      <div id="solution-panel" class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm"></div>
+    </section>
+
+    <!-- Koç vs Öğrenci Paneli Karşılaştırma Tablosu -->
+    <section id="karsilastirma" class="space-y-6">
+      <div class="text-center space-y-2">
+        <h2 class="text-2xl sm:text-3xl font-bold">Koç vs Öğrenci Paneli Karşılaştırması</h2>
+        <p class="text-slate-600 text-sm">Her iki rol için optimize edilmiş işlevsel çalışma alanları.</p>
+      </div>
+      <div class="overflow-x-auto bg-white rounded-2xl border border-slate-200 shadow-sm">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-100 text-slate-700 font-semibold">
+            <tr>
+              <th class="p-4">Özellik / Modül</th>
+              <th class="p-4">Koç Paneli</th>
+              <th class="p-4">Öğrenci Paneli</th>
+            </tr>
+          </thead>
+          <tbody id="comparison-body" class="divide-y divide-slate-200"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 3 Sekmeli Rol Giriş Yönlendirici -->
+    <section id="giris" class="space-y-6">
+      <div class="text-center space-y-2">
+        <h2 class="text-2xl sm:text-3xl font-bold">Rolünüze Göre Hemen Giriş Yapın</h2>
+        <p class="text-slate-600 text-sm">Yetkili panelinize veya haftalık çalışma programına doğrudan geçiş yapın.</p>
+      </div>
+      <div class="max-w-3xl mx-auto bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
+        <div id="role-tabs" class="grid grid-cols-3 gap-2 bg-slate-100 p-1.5 rounded-xl" role="tablist"></div>
+        <div id="role-panel" class="space-y-4"></div>
+      </div>
+    </section>
+
+    <!-- SSS -->
+    <section id="sss" class="space-y-6 max-w-4xl mx-auto">
+      <div class="text-center space-y-2">
+        <h2 class="text-2xl sm:text-3xl font-bold">Sıkça Sorulan Sorular</h2>
+        <p class="text-slate-600 text-sm">Paketler, 14 günlük deneme süreci ve kurumsal geçiş hakkında merak edilenler.</p>
+      </div>
+      <div id="faq-list" class="space-y-3"></div>
+    </section>
+  </main>
+
+  <!-- Alt Bilgi & 5 Yasal Metin Bağlantısı -->
+  <footer class="bg-slate-900 text-slate-300 mt-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="text-sm">
+        <p class="font-bold text-white text-base">AdımPlan EdTech SaaS</p>
+        <p class="text-slate-400 mt-1">Tüm hakları saklıdır. 14 gün ücretsiz deneme süresi sonunda otomatik ücretlendirme yapılmaz.</p>
+      </div>
+      <div id="legal-buttons" class="flex flex-wrap justify-center gap-3 text-xs sm:text-sm"></div>
+    </div>
+  </footer>
+
+  <!-- Yasal Metin Modalı -->
+  <div id="legal-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 p-4" role="dialog" aria-modal="true" aria-labelledby="legal-modal-title">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <h3 id="legal-modal-title" class="text-lg font-bold text-slate-900"></h3>
+        <button id="legal-modal-close" type="button" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800" aria-label="Kapat">✕</button>
+      </div>
+      <div id="legal-modal-body" class="p-6 overflow-y-auto text-sm text-slate-700 space-y-3 leading-relaxed"></div>
+    </div>
+  </div>
+
+  <script>
+    function escapeHtml(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    const PLANS = [
+      {
+        name: 'Mini',
+        price: '700 ₺',
+        period: '/ ay (KDV Dahil)',
+        capacity: '0–5 öğrenci',
+        popular: false,
+        features: ['14 gün ücretsiz deneme', 'Haftalık çalışma programı', 'Temel deneme net takibi', 'E-posta desteği']
+      },
+      {
+        name: 'Başlangıç',
+        price: '1.200 ₺',
+        period: '/ ay (KDV Dahil)',
+        capacity: '0–15 öğrenci',
+        popular: false,
+        features: ['14 gün ücretsiz deneme', 'Görev ve ödev takibi', 'Deneme analiz grafikleri', 'Veli bilgilendirme özeti']
+      },
+      {
+        name: 'Orta',
+        price: '1.800 ₺',
+        period: '/ ay (KDV Dahil)',
+        capacity: '0–25 öğrenci',
+        popular: true,
+        badge: 'En Popüler',
+        features: ['Toplu görev atama', 'Konu ısı haritası', 'AI program önerisi', 'Hareketli duyuru şeridi', 'Anlık veli bildirim linki']
+      },
+      {
+        name: 'Profesyonel',
+        price: '3.000 ₺',
+        period: '/ ay (KDV Dahil)',
+        capacity: '0–60 öğrenci',
+        popular: false,
+        features: ['Orta paketteki tüm özellikler', 'Gelişmiş raporlar', 'Telefon desteği', 'Konu bazlı hedef simülasyonu', 'Öncelikli PDF/Excel dışa aktarım']
+      },
+      {
+        name: 'Kurumsal',
+        price: 'Size Özel',
+        period: 'KDV Dahil Teklif',
+        capacity: 'Sınırsız öğrenci',
+        popular: false,
+        features: ['Kendi markası / logosu', 'Çok öğretmenli yönetim', 'Sınıf / şube yönetimi', 'Excel toplu aktarım', 'Yoklama modülü', 'Optik okuyucu .dat / Excel']
+      }
+    ];
+
+    const EXAMS = [
+      { code: 'YKS', desc: 'TYT & AYT Alan Takibi' },
+      { code: 'LGS', desc: '8. Sınıf LGS Hazırlık' },
+      { code: 'KPSS', desc: 'GY-GK & Eğitim Bilimleri' },
+      { code: 'MEBAGS/ÖABT', desc: 'Öğretmenlik Alan Bilgisi' },
+      { code: 'ALES', desc: 'Sayısal & Sözel Mantık' },
+      { code: 'DGS', desc: 'Dikey Geçiş Sınavı' },
+      { code: 'TUS', desc: 'Tıpta Uzmanlık Sınavı' },
+      { code: 'YDS', desc: 'Yabancı Dil Sınavı' }
+    ];
+
+    const SOLUTIONS = [
+      {
+        id: 'kocluk-programi',
+        title: 'Koçluk Programı',
+        summary: 'Öğrencilerinize saniyeler içinde kişiselleştirilmiş haftalık çalışma planları oluşturun.',
+        points: ['Sürükle-bırak haftalık program', 'AI destekli ders ve süre dağılımı', 'Otomatik tekrar hatırlatıcıları']
+      },
+      {
+        id: 'egitim-kocu-yazilimi',
+        title: 'Eğitim Koçu Yazılımı',
+        summary: 'Tüm öğrencilerinizin net gelişimini, konu eksiklerini ve ödev tamamlama oranlarını tek ekrandan yönetin.',
+        points: ['Konu ısı haritası ile eksik tespiti', 'Toplu görev atama ve kontrol', 'Görüşme notları ve hedef arşivi']
+      },
+      {
+        id: 'dershane-otomasyonu',
+        title: 'Dershane Otomasyonu',
+        summary: 'Kurumsal paket ile çok öğretmenli yönetim, şube bazlı planlama ve optik okuyucu entegrasyonu sağlayın.',
+        points: ['Kendi markanız ve logonuzla beyaz etiket kullanım', 'Optik okuyucu .dat ve Excel sonuç aktarımı', 'Sınıf/şube bazlı yoklama ve toplu Excel aktarım']
+      },
+      {
+        id: 'veli-takip-sistemi',
+        title: 'Veli Takip Sistemi',
+        summary: 'Velilere öğrencinin haftalık çalışma düzeni, deneme netleri ve devamsızlık durumu hakkında şeffaf özetler sunun.',
+        points: ['Haftalık gelişim özeti paylaşımı', 'Deneme sınavı net ve sıralama trendi', 'Ödev tamamlama oranı bilgilendirmesi']
+      },
+      {
+        id: 'ogrenci-takip-sistemi',
+        title: 'Öğrenci Takip Sistemi',
+        summary: 'Öğrencilerin günlük hedeflerini, çözdükleri soru sayılarını ve odak sürelerini kolayca kaydetmesini sağlayın.',
+        points: ['Mobil uyumlu günlük görev listesi', 'Ders ve konu bazlı soru sayısı girişi', 'Hedef puana kalan mesafe göstergesi']
+      }
+    ];
+
+    const COMPARISONS = [
+      ['Haftalık Program Yönetimi', 'Oluşturma, şablon kopyalama ve AI önerisi', 'Görüntüleme ve tamamlandı işaretleme'],
+      ['Görev ve Ödev Atama', 'Tekli ve toplu görev atama', 'Günlük görev listesi ve teslim bildirimi'],
+      ['Konu Isı Haritası', 'Tüm sınıf/öğrenci karşılaştırmalı analiz', 'Kişisel güçlü ve zayıf konu görünümü'],
+      ['Deneme Sınavı Analizi', 'Detaylı net, puan ve optik .dat/Excel yükleme', 'Kişisel net grafiği ve hedef takibi'],
+      ['Duyuru ve İletişim', 'Hareketli duyuru şeridi ve not ekleme', 'Anlık duyuru ve koç geri bildirimi']
+    ];
+
+    const ROLES = [
+      {
+        id: 'koc',
+        label: 'Koç',
+        title: 'Eğitim Koçu Girişi',
+        desc: 'Öğrenci listelerinizi, konu ısı haritalarını ve toplu görev atamalarını yönetmek için Koç Paneline geçin.',
+        primaryText: 'Koç Paneline Git',
+        primaryHref: './coach-panel.html',
+        secondaryText: 'Haftalık Programı Aç',
+        secondaryHref: './program.html'
+      },
+      {
+        id: 'ogrenci',
+        label: 'Öğrenci',
+        title: 'Öğrenci Paneli Girişi',
+        desc: 'Günlük çalışma görevlerinizi, deneme netlerinizi ve koçunuzun hazırladığı planı görmek için Öğrenci Paneline geçin.',
+        primaryText: 'Öğrenci Paneline Git',
+        primaryHref: './student.html',
+        secondaryText: 'Haftalık Programı Aç',
+        secondaryHref: './program.html'
+      },
+      {
+        id: 'kurumsal',
+        label: 'Kurumsal',
+        title: 'Kurumsal Yönetici Girişi',
+        desc: 'Çok öğretmenli yönetim, şube/sınıf ayarları, yoklama ve optik .dat/Excel işlemleri için Kurumsal Panele geçin.',
+        primaryText: 'Kurumsal Panele Git',
+        primaryHref: './admin.html',
+        secondaryText: 'Haftalık Programı Aç',
+        secondaryHref: './program.html'
+      }
+    ];
+
+    const FAQS = [
+      {
+        q: '14 gün ücretsiz deneme nasıl işler? Süre bitince ücret kesilir mi?',
+        a: 'Kayıt sırasında kredi kartı bilgisi istenmez. 14 günlük ücretsiz deneme süreniz dolduğunda otomatik ücret çekilmez; hesabınız veri kaybı yaşanmadan salt-okunur korumaya alınır.'
+      },
+      {
+        q: 'Hangi paketleri seçebilirim ve fiyatlara KDV dahil mi?',
+        a: 'Mini (700 ₺, 0–5 öğrenci), Başlangıç (1.200 ₺, 0–15 öğrenci), Orta (1.800 ₺, 0–25 öğrenci), Profesyonel (3.000 ₺, 0–60 öğrenci) ve Kurumsal (Size Özel) paketlerimiz mevcuttur. Belirtilen tüm fiyatlara KDV dahildir.'
+      },
+      {
+        q: 'Orta ve Profesyonel paketler arasındaki temel farklar nelerdir?',
+        a: 'Orta paket 0–25 öğrenci kapasitesiyle toplu görev atama, konu ısı haritası, AI program önerisi ve hareketli duyuru şeridi sunar. Profesyonel paket 0–60 öğrenci kapasitesine ek olarak gelişmiş raporlar, telefon desteği ve öncelikli dışa aktarım özelliklerini içerir.'
+      },
+      {
+        q: 'Kurumsal pakette optik okuyucu ve marka özelleştirmesi var mı?',
+        a: 'Evet. Kurumsal pakette kendi markanız/logonuz, çok öğretmenli yönetim, sınıf/şube yönetimi, Excel toplu aktarım, yoklama ve optik okuyucu .dat/Excel desteği bulunur.'
+      },
+      {
+        q: 'Hangi sınav grupları desteklenmektedir?',
+        a: 'YKS, LGS, KPSS, MEBAGS/ÖABT, ALES, DGS, TUS ve YDS olmak üzere 8 sınav grubunun tamamı güncel konu yapılarıyla desteklenir.'
+      }
+    ];
+
+    const LEGAL_DOCS = [
+      {
+        id: 'kvkk',
+        title: 'KVKK Aydınlatma Metni',
+        paragraphs: [
+          '6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) uyarınca AdımPlan EdTech SaaS platformu veri sorumlusu sıfatıyla; ad, soyad, e-posta, sınav grubu, deneme sonuçları ve kullanım kayıtlarınızı yalnızca eğitim koçluğu ve kurum yönetimi hizmetlerinin yürütülmesi amacıyla işlemektedir.',
+          'Kişisel verileriniz açık rızanız olmaksızın üçüncü taraflara pazarlama amacıyla aktarılmaz; yalnızca yasal yükümlülükler kapsamında yetkili kurumlarla ve teknik altyapı sağlayıcılarıyla şifreli iletişim kanalları üzerinden paylaşılır.',
+          'KVKK Madde 11 kapsamındaki bilgi talep etme, düzeltme, silme ve itiraz haklarınızı platform içi destek kanallarımız üzerinden iletebilirsiniz. 14 günlük ücretsiz deneme sonrasında abonelik başlatılmaması halinde verileriniz salt-okunur koruma altında muhafaza edilir ve talebinizle kalıcı olarak silinir.'
+        ]
+      },
+      {
+        id: 'gizlilik',
+        title: 'Gizlilik Politikası',
+        paragraphs: [
+          'AdımPlan, kullanıcılarının gizliliğini temel ilke kabul eder. Hesap güvenliği için oturum belirteçleri güvenli sunucu politikalarıyla yönetilir; tarayıcı yerel depolama alanına hassas kimlik veya ödeme bilgisi yazılmaz.',
+          'Koç, öğrenci ve kurumsal yönetici panelleri arasındaki veri erişimi rol tabanlı yetkilendirme ile sınırlandırılmıştır. Her kullanıcı yalnızca yetkili olduğu öğrenci veya şube verilerini görüntüleyebilir.',
+          'Platform üzerindeki tüm iletişim TLS/HTTPS şifrelemesi ile korunur ve düzenli güvenlik taramalarından geçirilir.'
+        ]
+      },
+      {
+        id: 'kullanim',
+        title: 'Kullanım Koşulları',
+        paragraphs: [
+          'AdımPlan platformunu kullanan bireysel eğitim koçları, öğrenciler ve kurumlar; seçtikleri Mini, Başlangıç, Orta, Profesyonel veya Kurumsal paket kapsamındaki öğrenci kotası ve rol yetkilerine uygun hareket etmeyi kabul eder.',
+          'Yeni hesaplara tanımlanan 14 günlük ücretsiz deneme süresinde kredi kartı talep edilmez ve dönem sonunda otomatik tahsilat yapılmaz. Süre sonunda ücretli pakete geçilmezse hesap salt-okunur korumaya alınır.',
+          'Platform içeriğinin, arayüz kodlarının veya veri tabanı yapısının izinsiz kopyalanması, otomatik veri kazıma yapılması ve yetkisiz erişim girişimleri yasaktır.'
+        ]
+      },
+      {
+        id: 'cerez',
+        title: 'Çerez Politikası',
+        paragraphs: [
+          'AdımPlan, platformun temel işlevlerini yerine getirebilmesi için zorunlu oturum ve güvenlik çerezlerini kullanır. Bu çerezler kimlik doğrulama ve sayfa yönlendirme güvenliği için gereklidir.',
+          'Tercih ve performans ölçümü sağlayan çerezler, yalnızca hizmet kalitesini artırmak ve sayfa yükleme hızlarını iyileştirmek amacıyla anonimleştirilmiş biçimde değerlendirilir.',
+          'Tarayıcı ayarlarınız üzerinden çerez tercihlerinizi dilediğiniz zaman güncelleyebilirsiniz; zorunlu çerezlerin devre dışı bırakılması panel girişlerini etkileyebilir.'
+        ]
+      },
+      {
+        id: 'mesafeli-satis',
+        title: 'Mesafeli Satış Sözleşmesi',
+        paragraphs: [
+          'İşbu Mesafeli Satış Sözleşmesi, AdımPlan EdTech SaaS hizmetlerinden ücretli abonelik kapsamında yararlanmak isteyen Alıcı ile Hizmet Sağlayıcı arasında elektronik ortamda kurulur. Tüm paket fiyatları (Mini 700 ₺, Başlangıç 1.200 ₺, Orta 1.800 ₺, Profesyonel 3.000 ₺ ve Kurumsal Size Özel) KDV dahil olarak sunulur.',
+          'Alıcı, ödeme adımından önce 14 gün ücretsiz deneme hakkından kredi kartı bilgisi vermeksizin faydalanabilir; deneme süresi sonunda otomatik ücret çekilmez, hesap salt-okunur korumaya geçer.',
+          'Elektronik ortamda anında ifa edilen SaaS abonelik hizmetlerinde Alıcı, aboneliğini bir sonraki fatura döneminden önce panel üzerinden iptal ederek yenilemeyi durdurabilir.'
+        ]
+      }
+    ];
+
+    function renderPricing() {
+      const grid = document.getElementById('pricing-grid');
+      grid.innerHTML = PLANS.map(function (plan) {
+        const cardCls = plan.popular
+          ? 'relative bg-white rounded-2xl border-2 border-indigo-600 p-6 shadow-md flex flex-col justify-between'
+          : 'bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between';
+        const badgeHtml = plan.badge
+          ? '<span class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-indigo-600 text-white text-xs font-bold">' + escapeHtml(plan.badge) + '</span>'
+          : '';
+        const featuresHtml = plan.features.map(function (f) {
+          return '<li class="flex items-start gap-2 text-xs sm:text-sm text-slate-700"><span class="text-indigo-600 font-bold">✓</span><span>' + escapeHtml(f) + '</span></li>';
+        }).join('');
+        return (
+          '<article class="' + cardCls + '">' +
+            badgeHtml +
+            '<div class="space-y-4">' +
+              '<div>' +
+                '<h3 class="text-lg font-bold text-slate-900">' + escapeHtml(plan.name) + '</h3>' +
+                '<p class="text-xs font-semibold text-indigo-600 mt-0.5">' + escapeHtml(plan.capacity) + '</p>' +
+              '</div>' +
+              '<div>' +
+                '<div class="text-2xl sm:text-3xl font-extrabold text-slate-900">' + escapeHtml(plan.price) + '</div>' +
+                '<div class="text-xs text-slate-500">' + escapeHtml(plan.period) + '</div>' +
+              '</div>' +
+              '<ul class="space-y-2 pt-2 border-t border-slate-100">' + featuresHtml + '</ul>' +
+            '</div>' +
+            '<a href="#giris" class="mt-6 block text-center w-full py-2.5 px-4 rounded-xl text-sm font-semibold ' +
+              (plan.popular ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-100 text-slate-800 hover:bg-slate-200') +
+              ' transition">14 Gün Ücretsiz Başla</a>' +
+          '</article>'
+        );
+      }).join('');
+    }
+
+    function renderExams() {
+      const grid = document.getElementById('exams-grid');
+      grid.innerHTML = EXAMS.map(function (ex) {
+        return (
+          '<div class="bg-white rounded-xl border border-slate-200 p-4 text-center shadow-sm">' +
+            '<div class="text-sm font-extrabold text-indigo-700">' + escapeHtml(ex.code) + '</div>' +
+            '<div class="text-xs text-slate-600 mt-1">' + escapeHtml(ex.desc) + '</div>' +
+          '</div>'
+        );
+      }).join('');
+    }
+
+    function renderSolutions(activeIndex) {
+      const tabsEl = document.getElementById('solution-tabs');
+      const panelEl = document.getElementById('solution-panel');
+      tabsEl.innerHTML = SOLUTIONS.map(function (sol, idx) {
+        const active = idx === activeIndex;
+        return '<button type="button" data-sol-idx="' + idx + '" role="tab" aria-selected="' + active + '" class="px-4 py-2 rounded-xl text-sm font-semibold transition ' +
+          (active ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100') +
+          '">' + escapeHtml(sol.title) + '</button>';
+      }).join('');
+      const current = SOLUTIONS[activeIndex];
+      panelEl.innerHTML =
+        '<div class="space-y-4">' +
+          '<h3 class="text-xl font-bold text-slate-900">' + escapeHtml(current.title) + '</h3>' +
+          '<p class="text-slate-600 text-sm sm:text-base">' + escapeHtml(current.summary) + '</p>' +
+          '<ul class="grid sm:grid-cols-3 gap-3 pt-2">' +
+            current.points.map(function (pt) {
+              return '<li class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs sm:text-sm font-medium text-slate-800">✓ ' + escapeHtml(pt) + '</li>';
+            }).join('') +
+          '</ul>' +
+        '</div>';
+    }
+
+    function renderComparison() {
+      const body = document.getElementById('comparison-body');
+      body.innerHTML = COMPARISONS.map(function (row) {
+        return (
+          '<tr class="hover:bg-slate-50">' +
+            '<td class="p-4 font-semibold text-slate-900">' + escapeHtml(row[0]) + '</td>' +
+            '<td class="p-4 text-slate-700">' + escapeHtml(row[1]) + '</td>' +
+            '<td class="p-4 text-slate-700">' + escapeHtml(row[2]) + '</td>' +
+          '</tr>'
+        );
+      }).join('');
+    }
+
+    function renderRoles(activeIndex) {
+      const tabsEl = document.getElementById('role-tabs');
+      const panelEl = document.getElementById('role-panel');
+      tabsEl.innerHTML = ROLES.map(function (role, idx) {
+        const active = idx === activeIndex;
+        return '<button type="button" data-role-idx="' + idx + '" role="tab" aria-selected="' + active + '" class="py-2.5 px-3 rounded-lg text-sm font-semibold transition ' +
+          (active ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900') +
+          '">' + escapeHtml(role.label) + '</button>';
+      }).join('');
+      const current = ROLES[activeIndex];
+      panelEl.innerHTML =
+        '<div class="space-y-3">' +
+          '<h3 class="text-xl font-bold text-slate-900">' + escapeHtml(current.title) + '</h3>' +
+          '<p class="text-sm text-slate-600">' + escapeHtml(current.desc) + '</p>' +
+          '<div class="flex flex-wrap gap-3 pt-2">' +
+            '<a href="' + escapeHtml(current.primaryHref) + '" class="inline-flex items-center px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition">' + escapeHtml(current.primaryText) + '</a>' +
+            '<a href="' + escapeHtml(current.secondaryHref) + '" class="inline-flex items-center px-5 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-sm font-semibold hover:bg-slate-200 transition">' + escapeHtml(current.secondaryText) + '</a>' +
+          '</div>' +
+        '</div>';
+    }
+
+    function renderFaqs() {
+      const list = document.getElementById('faq-list');
+      list.innerHTML = FAQS.map(function (item) {
+        return (
+          '<details class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm group">' +
+            '<summary class="font-semibold text-slate-900 cursor-pointer list-none flex items-center justify-between gap-4">' +
+              '<span>' + escapeHtml(item.q) + '</span>' +
+              '<span class="text-indigo-600 font-bold group-open:rotate-45 transition">+</span>' +
+            '</summary>' +
+            '<p class="mt-3 text-sm text-slate-600 leading-relaxed">' + escapeHtml(item.a) + '</p>' +
+          '</details>'
+        );
+      }).join('');
+    }
+
+    function renderLegalButtons() {
+      const container = document.getElementById('legal-buttons');
+      container.innerHTML = LEGAL_DOCS.map(function (doc) {
+        return '<button type="button" data-legal-id="' + escapeHtml(doc.id) + '" class="hover:text-white underline underline-offset-4 transition">' + escapeHtml(doc.title) + '</button>';
+      }).join('');
+    }
+
+    function openLegalModal(docId) {
+      const doc = LEGAL_DOCS.find(function (d) { return d.id === docId; });
+      if (!doc) return;
+      document.getElementById('legal-modal-title').textContent = doc.title;
+      document.getElementById('legal-modal-body').innerHTML = doc.paragraphs.map(function (p) {
+        return '<p>' + escapeHtml(p) + '</p>';
+      }).join('');
+      const modal = document.getElementById('legal-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeLegalModal() {
+      const modal = document.getElementById('legal-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      renderPricing();
+      renderExams();
+      renderSolutions(0);
+      renderComparison();
+      renderRoles(0);
+      renderFaqs();
+      renderLegalButtons();
+
+      document.getElementById('solution-tabs').addEventListener('click', function (e) {
+        const btn = e.target.closest('[data-sol-idx]');
+        if (btn) renderSolutions(Number(btn.getAttribute('data-sol-idx')));
+      });
+
+      document.getElementById('role-tabs').addEventListener('click', function (e) {
+        const btn = e.target.closest('[data-role-idx]');
+        if (btn) renderRoles(Number(btn.getAttribute('data-role-idx')));
+      });
+
+      document.getElementById('legal-buttons').addEventListener('click', function (e) {
+        const btn = e.target.closest('[data-legal-id]');
+        if (btn) openLegalModal(btn.getAttribute('data-legal-id'));
+      });
+
+      document.getElementById('legal-modal-close').addEventListener('click', closeLegalModal);
+      document.getElementById('legal-modal').addEventListener('click', function (e) {
+        if (e.target === e.currentTarget) closeLegalModal();
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeLegalModal();
+      });
+    });
+  </script>
+</body>
+</html>
