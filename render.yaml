@@ -9,6 +9,13 @@ services:
     envVars:
       - key: SUPABASE_URL
         value: https://mkimvsmlxassitajminz.supabase.co
+      # Publishable anahtar herkese açıktır. service_role / secret anahtar KOYMAYIN.
+      # Bu iki değişken birlikte tanımlı değilse API kimlik doğrulamasız demo modunda çalışır.
+      - key: SUPABASE_ANON_KEY
+        value: sb_publishable_duEqBEFX7FsPnbEq0uo9rg_osJiJp5D
+      # Gizli değer: depoya yazılmaz, Render panelinden girilir. Boşsa e-posta gönderilmez (dry run).
+      - key: RESEND_API_KEY
+        sync: false
   - type: web
     name: adimplan-web
     runtime: static
