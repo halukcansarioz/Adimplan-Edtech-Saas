@@ -2,6 +2,14 @@
 
 Bu dosya **İvme Akademi — Adımplan EdTech SaaS** projesindeki önemli sürüm değişikliklerini içerir.
 
+## [v2.1.0]
+
+### Eklenenler ve İyileştirmeler
+- **Animasyonlar ve SVG İllüstrasyonlar (PR #45):** Ana sayfa ve ürün bölümleri için akıcı animasyonlar ve özel SVG illüstrasyonları eklendi.
+- **SSS Bölümü (PR #46):** Sıkça Sorulan Sorular bölümü 12 kapsamlı soru-cevap ile güncellendi.
+- **3B Perspektifli Katmanlı Görsel Vitrinler (PR #47):** Ürün arayüzlerini öne çıkaran 3B perspektifli katmanlı görsel vitrinler eklendi.
+- **SEO, Open Graph ve Site Haritası:** `frontend/index.html` için Türkçe SEO meta açıklaması, canonical bağlantı, Open Graph / Twitter Card etiketleri eklendi; `frontend/sitemap.xml` tüm v2 sayfaları ve `2026-11-27` tarihiyle güncellendi.
+
 ## [v2.0.0]
 
 ### Eklenenler ve İyileştirmeler
