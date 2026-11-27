@@ -273,6 +273,8 @@ def test_login_and_register_flow(frontend_url):
         browser = p.chromium.launch()
         context = browser.new_context(viewport={"width": 1280, "height": 800})
         page = context.new_page()
+        # Local-account mode: never let this test reach the real Supabase project.
+        context.route("**/config.js", lambda route: route.fulfill(body="", content_type="application/javascript"))
         page.goto(f"{frontend_url}/login.html#kayit", wait_until="load")
         assert page.locator("#registerForm").is_visible()
         page.fill("#regName", "Test Ogrenci")
@@ -684,6 +686,35 @@ def test_real_backup_still_exports_real_data(frontend_url):
             with page.expect_download() as info:
                 page.evaluate("exportBackup()")
             assert "GERCEK-OGRENCI" in open(info.value.path(), encoding="utf-8").read()
+
+
+def test_login_uses_configured_supabase_project(frontend_url):
+    stub = """
+    window.supabase = { createClient: function (url, key) {
+      sessionStorage.setItem('_client', JSON.stringify([url, key]));
+      return { auth: { signInWithPassword: async function () {
+        return { data: { user: { user_metadata: { role: 'Koç' } } }, error: null };
+      } } };
+    } };
+    """
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            context = browser.new_context()
+            context.route(lambda u: not u.startswith("http://127.0.0.1"), lambda route: route.abort())
+            context.route("**/@supabase/supabase-js@2",
+                          lambda route: route.fulfill(body=stub, content_type="application/javascript"))
+            page = context.new_page()
+            page.goto(f"{frontend_url}/login.html")
+            page.fill("#loginEmail", "koc@example.com")
+            page.fill("#loginPassword", "123456")
+            page.locator("#loginForm button[type='submit']").click()
+            page.wait_for_url("**/app.html")
+            page.wait_for_load_state("load")
+            client = page.evaluate("JSON.parse(sessionStorage.getItem('_client'))")
+            assert client[0] == "https://mkimvsmlxassitajminz.supabase.co"
+            assert client[1].startswith("sb_publishable_")
+            assert page.evaluate("getSupaCfg().url") == client[0]
+            assert page.input_value("#supaKeyInput") == client[1]
 
 
 def test_program_page_shows_typed_html_as_text(frontend_url):
