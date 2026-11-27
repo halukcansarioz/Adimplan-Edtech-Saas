@@ -543,9 +543,9 @@ statusBadge +
 '<button onclick="togglePalette(\'' + t.id + '\')" title="Renk Seç" class="w-3.5 h-3.5 rounded-full ' + c.dot + ' border border-white shadow-sm"></button>' +
 '<button onclick="toggleDone(\'' + t.id + '\')" title="Tamamlandı" class="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold border ' + (t.done ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white border-slate-300 text-slate-400 hover:border-emerald-500') + '">✓</button>' +
 '</div></div>' +
-'<div class="inline-block px-2 py-0.5 rounded-md text-[10px] font-bold mb-1 ' + c.badge + '">' + t.subject + '</div>' +
-'<div class="text-xs font-bold text-slate-800 ' + (t.done ? 'line-through' : '') + '">' + t.topic + '</div>' +
-'<div class="text-[11px] text-slate-600 mt-0.5">' + t.activity + (t.target ? ' • <strong>' + t.target + '</strong>' : '') + '</div>' +
+'<div class="inline-block px-2 py-0.5 rounded-md text-[10px] font-bold mb-1 ' + c.badge + '">' + escapeHtml(t.subject) + '</div>' +
+'<div class="text-xs font-bold text-slate-800 ' + (t.done ? 'line-through' : '') + '">' + escapeHtml(t.topic) + '</div>' +
+'<div class="text-[11px] text-slate-600 mt-0.5">' + escapeHtml(t.activity) + (t.target ? ' • <strong>' + escapeHtml(t.target) + '</strong>' : '') + '</div>' +
 '<div class="flex items-center justify-end gap-2 mt-2 text-[11px] font-semibold text-slate-500">' +
 '<button onclick="openTaskModal(\'' + t.id + '\')" class="hover:text-slate-900">Düzenle</button>' +
 '<button onclick="deleteTask(\'' + t.id + '\')" class="hover:text-rose-600">Sil</button>' +
@@ -641,7 +641,7 @@ openModal('task-modal');
 
 function renderTaskModalControls() {
 document.getElementById('quick-templates').innerHTML = state.quickTemplates.map((tpl, i) =>
-'<button type="button" onclick="applyQuickTemplate(' + i + ')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-xs font-medium text-slate-700">' + tpl.name + '</button>'
+'<button type="button" onclick="applyQuickTemplate(' + i + ')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-xs font-medium text-slate-700">' + escapeHtml(tpl.name) + '</button>'
 ).join('');
 document.getElementById('task-day-pills').innerHTML = DAYS_SHORT.map((d, i) => {
 const active = modalSelectedDays.includes(i);
@@ -723,7 +723,7 @@ openModal('bulk-modal');
 
 function renderBulkControls() {
 document.getElementById('bulk-templates').innerHTML = state.bulkTemplates.map((tpl, i) =>
-'<button type="button" onclick="applyBulkTemplate(' + i + ')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-xs font-medium text-slate-700">' + tpl.name + '</button>'
+'<button type="button" onclick="applyBulkTemplate(' + i + ')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-xs font-medium text-slate-700">' + escapeHtml(tpl.name) + '</button>'
 ).join('');
 document.getElementById('bulk-students').innerHTML = STUDENTS.map(s =>
 '<label class="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer"><input type="checkbox" onchange="toggleBulkStudent(\'' + s.id + '\')" ' + (bulkSelectedStudents.includes(s.id) ? 'checked' : '') + ' class="rounded text-emerald-600" /><span>' + s.name + ' (' + s.exam + ')</span></label>'
