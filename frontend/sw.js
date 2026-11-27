@@ -1,4 +1,4 @@
-const CACHE_NAME = 'adimplan-pwa-v21';
+const CACHE_NAME = 'adimplan-pwa-v22';
 const PRECACHE_URLS = [
   './', './index.html',
   './login.html',
@@ -17,7 +17,8 @@ const PRECACHE_URLS = [
   './supabase-sync.js',
   './coach-live-hooks.js',
   './student-live-hooks.js',
-'./auth-callback.js'
+'./auth-callback.js',
+  './parent-report.html'
 ];
 
 // "cleanUrls" yayında /app.html -> /app yönlendirir. Yönlendirilmiş bir yanıt
