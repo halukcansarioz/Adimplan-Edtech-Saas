@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Adımplan · Haftalık Veli Gelişim Raporu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f1f5f9;
+      color: #0f172a;
+    }
+    .report-header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #312e81 100%);
+    }
+    .progress-fill {
+      transition: width 0.35s ease;
+    }
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      body {
+        background-color: #ffffff !important;
+      }
+      .report-card {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen py-6 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-4xl mx-auto space-y-6">
+    <!-- Koç Araç Çubuğu -->
+    <section class="no-print bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="text-sm font-bold uppercase tracking-wider text-indigo-700">Koç Araç Çubuğu</h2>
+          <p class="text-xs text-slate-500">Raporu canlı olarak düzenleyin, paylaşım linki veya WhatsApp özeti kopyalayın.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="toggleCustomizeBtn" type="button" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+            Raporu Özelleştir
+          </button>
+          <button id="copyLinkBtn" type="button" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition">
+            Paylaşılabilir Link Kopyala
+          </button>
+          <button id="copyWhatsappBtn" type="button" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition">
+            WhatsApp Özeti Kopyala
+          </button>
+          <button id="printBtn" type="button" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition">
+            PDF / Yazdır
+          </button>
+        </div>
+      </div>
+
+      <p id="toolbarFeedback" class="hidden text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2"></p>
+
+      <!-- Raporu Özelleştir Paneli -->
+      <div id="customizePanel" class="hidden pt-4 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div>
+          <label for="inputStudent" class="block text-xs font-semibold text-slate-600 mb-1">Öğrenci Adı</label>
+          <input id="inputStudent" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label for="inputExam" class="block text-xs font-semibold text-slate-600 mb-1">Sınav Türü</label>
+          <input id="inputExam" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label for="inputWeek" class="block text-xs font-semibold text-slate-600 mb-1">Hafta Aralığı</label>
+          <input id="inputWeek" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label for="inputStreak" class="block text-xs font-semibold text-slate-600 mb-1">Çalışma Serisi (Gün)</label>
+          <input id="inputStreak" type="number" min="0" max="365" class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label for="inputDone" class="block text-xs font-semibold text-slate-600 mb-1">Tamamlanan Görev</label>
+          <input id="inputDone" type="number" min="0" class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label for="inputTotal" class="block text-xs font-semibold text-slate-600 mb-1">Toplam Görev</label>
+          <input id="inputTotal" type="number" min="1" class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label for="inputPomodoro" class="block text-xs font-semibold text-slate-600 mb-1">Odak Süresi (dk)</label>
+          <input id="inputPomodoro" type="number" min="0" class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label for="inputNet" class="block text-xs font-semibold text-slate-600 mb-1">Son Deneme Neti</label>
+          <input id="inputNet" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div class="sm:col-span-2 lg:col-span-4">
+          <label for="inputNote" class="block text-xs font-semibold text-slate-600 mb-1">Koç Değerlendirme Notu</label>
+          <textarea id="inputNote" rows="2" class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- Ana Veli Raporu Kartı -->
+    <main class="report-card bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
+      <!-- Üst Koyu Lacivert/İndigo Başlık Bandı -->
+      <header class="report-header text-white px-6 py-7 sm:px-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <p class="text-xs font-bold tracking-widest uppercase text-indigo-200">ADIMPLAN · HAFTALIK VELİ RAPORU</p>
+            <h1 id="reportStudent" class="text-2xl sm:text-3xl font-extrabold mt-1 tracking-tight">Ayşe Yılmaz</h1>
+            <div class="flex flex-wrap items-center gap-3 mt-2 text-sm text-indigo-100">
+              <span id="reportExam" class="inline-flex items-center font-medium">YKS · Sayısal</span>
+              <span aria-hidden="true">•</span>
+              <span id="reportWeek" class="inline-flex items-center">18 - 24 Kasım 2026</span>
+            </div>
+          </div>
+          <div class="self-start sm:self-center">
+            <span id="statusBadge" class="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-bold tracking-wide bg-emerald-400/20 text-emerald-200 border border-emerald-300/30">
+              Güçlü İlerleme
+            </span>
+          </div>
+        </div>
+      </header>
+
+      <div class="p-6 sm:p-8 space-y-8">
+        <!-- 4 KPI Kartı -->
+        <section aria-label="Temel Performans Göstergeleri" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Görev Tamamlama</p>
+            <p id="kpiCompletion" class="text-xl font-extrabold text-slate-900 mt-1">8/10 · %80</p>
+            <p class="text-xs text-slate-500 mt-1">Haftalık plan hedefleri</p>
+          </div>
+          <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Haftalık Odak Süresi</p>
+            <p id="kpiPomodoro" class="text-xl font-extrabold text-indigo-700 mt-1">360 dk</p>
+            <p class="text-xs text-slate-500 mt-1">Pomodoro odak toplamı</p>
+          </div>
+          <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Son Deneme Neti</p>
+            <p id="kpiNet" class="text-xl font-extrabold text-emerald-700 mt-1">78.5 Net</p>
+            <p class="text-xs text-slate-500 mt-1">Güncel ölçme sonucu</p>
+          </div>
+          <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Çalışma Serisi (Streak)</p>
+            <p id="kpiStreak" class="text-xl font-extrabold text-amber-600 mt-1">6 Gün</p>
+            <p class="text-xs text-slate-500 mt-1">Kesintisiz aktif gün</p>
+          </div>
+        </section>
+
+        <!-- Ders Bazlı İlerleme & Haftalık Gün Gün Özet -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <section class="rounded-xl border border-slate-200 p-5">
+            <h2 class="text-base font-bold text-slate-900 mb-4">Ders Bazlı İlerleme</h2>
+            <div id="subjectList" class="space-y-4"></div>
+          </section>
+
+          <section class="rounded-xl border border-slate-200 p-5">
+            <h2 class="text-base font-bold text-slate-900 mb-4">Haftalık Gün Gün Tamamlanma Özeti</h2>
+            <div id="dailySummary" class="grid grid-cols-7 gap-2"></div>
+            <p class="text-xs text-slate-500 mt-4">Her sütun ilgili gündeki planlanan görev tamamlama yoğunluğunu gösterir.</p>
+          </section>
+        </div>
+
+        <!-- Koç Değerlendirme Notu -->
+        <section class="rounded-xl border border-indigo-200 bg-indigo-50/60 p-5">
+          <h2 class="text-sm font-bold uppercase tracking-wider text-indigo-900 mb-2">Koç Değerlendirme Notu</h2>
+          <p id="reportNote" class="text-sm leading-relaxed text-slate-700"></p>
+        </section>
+
+        <footer class="pt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-slate-400">
+          <span>Adımplan EdTech · Kişiselleştirilmiş Sınav Koçluğu Platformu</span>
+          <span id="reportGeneratedDate"></span>
+        </footer>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      const DEFAULTS = {
+        student: 'Ayşe Yılmaz',
+        exam: 'YKS · Sayısal',
+        week: '18 - 24 Kasım 2026',
+        done: 8,
+        total: 10,
+        pomodoro: 360,
+        net: '78.5',
+        streak: 6,
+        note: 'Haftalık çalışma disiplini oldukça istikrarlı. Matematik problem ve paragraf rutinleri aksatılmadan sürdürüldü; önümüzdeki hafta fizik deneme analizlerine ağırlık verilecek.'
+      };
+
+      const params = new URLSearchParams(window.location.search);
+
+      function parseNonNegativeInt(val, fallback) {
+        if (val === null || val === '') return fallback;
+        const parsed = parseInt(val, 10);
+        return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+      }
+
+      const state = {
+        student: (params.get('student') || DEFAULTS.student).trim() || DEFAULTS.student,
+        exam: (params.get('exam') || DEFAULTS.exam).trim() || DEFAULTS.exam,
+        week: (params.get('week') || DEFAULTS.week).trim() || DEFAULTS.week,
+        done: parseNonNegativeInt(params.get('done'), DEFAULTS.done),
+        total: Math.max(1, parseNonNegativeInt(params.get('total'), DEFAULTS.total)),
+        pomodoro: parseNonNegativeInt(params.get('pomodoro'), DEFAULTS.pomodoro),
+        net: (params.get('net') || DEFAULTS.net).trim() || DEFAULTS.net,
+        streak: parseNonNegativeInt(params.get('streak'), DEFAULTS.streak),
+        note: (params.get('note') || DEFAULTS.note).trim() || DEFAULTS.note
+      };
+
+      const el = {
+        reportStudent: document.getElementById('reportStudent'),
+        reportExam: document.getElementById('reportExam'),
+        reportWeek: document.getElementById('reportWeek'),
+        statusBadge: document.getElementById('statusBadge'),
+        kpiCompletion: document.getElementById('kpiCompletion'),
+        kpiPomodoro: document.getElementById('kpiPomodoro'),
+        kpiNet: document.getElementById('kpiNet'),
+        kpiStreak: document.getElementById('kpiStreak'),
+        subjectList: document.getElementById('subjectList'),
+        dailySummary: document.getElementById('dailySummary'),
+        reportNote: document.getElementById('reportNote'),
+        reportGeneratedDate: document.getElementById('reportGeneratedDate'),
+        customizePanel: document.getElementById('customizePanel'),
+        toggleCustomizeBtn: document.getElementById('toggleCustomizeBtn'),
+        copyLinkBtn: document.getElementById('copyLinkBtn'),
+        copyWhatsappBtn: document.getElementById('copyWhatsappBtn'),
+        printBtn: document.getElementById('printBtn'),
+        toolbarFeedback: document.getElementById('toolbarFeedback'),
+        inputStudent: document.getElementById('inputStudent'),
+        inputExam: document.getElementById('inputExam'),
+        inputWeek: document.getElementById('inputWeek'),
+        inputStreak: document.getElementById('inputStreak'),
+        inputDone: document.getElementById('inputDone'),
+        inputTotal: document.getElementById('inputTotal'),
+        inputPomodoro: document.getElementById('inputPomodoro'),
+        inputNet: document.getElementById('inputNet'),
+        inputNote: document.getElementById('inputNote')
+      };
+
+      function clearChildren(node) {
+        while (node.firstChild) {
+          node.removeChild(node.firstChild);
+        }
+      }
+
+      function computeCompletionPct() {
+        const safeTotal = Math.max(1, state.total);
+        const safeDone = Math.max(0, Math.min(state.done, safeTotal));
+        return Math.round((safeDone / safeTotal) * 100);
+      }
+
+      function renderSubjects(pct) {
+        clearChildren(el.subjectList);
+        const subjects = [
+          { name: 'Matematik', ratio: Math.min(100, Math.max(20, pct + 5)), color: 'bg-indigo-600' },
+          { name: 'Türkçe / Paragraf', ratio: Math.min(100, Math.max(25, pct + 10)), color: 'bg-emerald-600' },
+          { name: 'Fen Bilimleri', ratio: Math.min(100, Math.max(15, pct - 5)), color: 'bg-sky-600' },
+          { name: 'Deneme & Tekrar', ratio: Math.min(100, Math.max(10, pct)), color: 'bg-amber-500' }
+        ];
+
+        subjects.forEach(function (subj) {
+          const wrapper = document.createElement('div');
+
+          const row = document.createElement('div');
+          row.className = 'flex items-center justify-between text-xs font-semibold text-slate-700 mb-1.5';
+
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = subj.name;
+
+          const valSpan = document.createElement('span');
+          valSpan.textContent = '%' + subj.ratio;
+
+          row.appendChild(nameSpan);
+          row.appendChild(valSpan);
+
+          const track = document.createElement('div');
+          track.className = 'w-full h-2.5 bg-slate-100 rounded-full overflow-hidden';
+
+          const bar = document.createElement('div');
+          bar.className = 'progress-fill h-full rounded-full ' + subj.color;
+          bar.style.width = subj.ratio + '%';
+
+          track.appendChild(bar);
+          wrapper.appendChild(row);
+          wrapper.appendChild(track);
+          el.subjectList.appendChild(wrapper);
+        });
+      }
+
+      function renderDailySummary(pct) {
+        clearChildren(el.dailySummary);
+        const days = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+        const activeCount = Math.max(1, Math.min(7, Math.round((pct / 100) * 7)));
+
+        days.forEach(function (day, idx) {
+          const isCompleted = idx < activeCount;
+          const card = document.createElement('div');
+          card.className = 'flex flex-col items-center justify-between rounded-xl border p-2.5 text-center ' +
+            (isCompleted
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+              : 'border-slate-200 bg-slate-50 text-slate-400');
+
+          const dayLabel = document.createElement('span');
+          dayLabel.className = 'text-xs font-bold';
+          dayLabel.textContent = day;
+
+          const statusDot = document.createElement('span');
+          statusDot.className = 'mt-2 inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ' +
+            (isCompleted ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-500');
+          statusDot.textContent = isCompleted ? '✓' : '·';
+
+          card.appendChild(dayLabel);
+          card.appendChild(statusDot);
+          el.dailySummary.appendChild(card);
+        });
+      }
+
+      function renderReport() {
+        const safeTotal = Math.max(1, state.total);
+        const pct = computeCompletionPct();
+
+        el.reportStudent.textContent = state.student;
+        el.reportExam.textContent = state.exam;
+        el.reportWeek.textContent = state.week;
+        el.kpiCompletion.textContent = state.done + '/' + safeTotal + ' · %' + pct;
+        el.kpiPomodoro.textContent = state.pomodoro + ' dk';
+        el.kpiNet.textContent = state.net + ' Net';
+        el.kpiStreak.textContent = state.streak + ' Gün';
+        el.reportNote.textContent = state.note;
+
+        if (pct >= 75) {
+          el.statusBadge.textContent = 'Güçlü İlerleme';
+          el.statusBadge.className = 'inline-flex items-center px-4 py-1.5 rounded-full text-xs font-bold tracking-wide bg-emerald-400/20 text-emerald-200 border border-emerald-300/30';
+        } else if (pct >= 50) {
+          el.statusBadge.textContent = 'Gelişime Açık';
+          el.statusBadge.className = 'inline-flex items-center px-4 py-1.5 rounded-full text-xs font-bold tracking-wide bg-amber-400/20 text-amber-200 border border-amber-300/30';
+        } else {
+          el.statusBadge.textContent = 'Yakın Takip';
+          el.statusBadge.className = 'inline-flex items-center px-4 py-1.5 rounded-full text-xs font-bold tracking-wide bg-rose-400/20 text-rose-200 border border-rose-300/30';
+        }
+
+        renderSubjects(pct);
+        renderDailySummary(pct);
+
+        const now = new Date();
+        el.reportGeneratedDate.textContent = 'Rapor Tarihi: ' + now.toLocaleDateString('tr-TR');
+      }
+
+      function syncInputs() {
+        el.inputStudent.value = state.student;
+        el.inputExam.value = state.exam;
+        el.inputWeek.value = state.week;
+        el.inputStreak.value = String(state.streak);
+        el.inputDone.value = String(state.done);
+        el.inputTotal.value = String(state.total);
+        el.inputPomodoro.value = String(state.pomodoro);
+        el.inputNet.value = state.net;
+        el.inputNote.value = state.note;
+      }
+
+      function showFeedback(message) {
+        el.toolbarFeedback.textContent = message;
+        el.toolbarFeedback.classList.remove('hidden');
+        window.setTimeout(function () {
+          el.toolbarFeedback.classList.add('hidden');
+        }, 3000);
+      }
+
+      function buildShareUrl() {
+        const url = new URL(window.location.href);
+        url.searchParams.set('student', state.student);
+        url.searchParams.set('exam', state.exam);
+        url.searchParams.set('week', state.week);
+        url.searchParams.set('done', String(state.done));
+        url.searchParams.set('total', String(state.total));
+        url.searchParams.set('pomodoro', String(state.pomodoro));
+        url.searchParams.set('net', state.net);
+        url.searchParams.set('streak', String(state.streak));
+        url.searchParams.set('note', state.note);
+        return url.toString();
+      }
+
+      function copyText(text, successMsg) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function () {
+            showFeedback(successMsg);
+          }).catch(function () {
+            showFeedback(successMsg);
+          });
+        } else {
+          showFeedback(successMsg);
+        }
+      }
+
+      el.toggleCustomizeBtn.addEventListener('click', function () {
+        el.customizePanel.classList.toggle('hidden');
+      });
+
+      el.copyLinkBtn.addEventListener('click', function () {
+        copyText(buildShareUrl(), 'Paylaşılabilir veli raporu linki panoya kopyalandı.');
+      });
+
+      el.copyWhatsappBtn.addEventListener('click', function () {
+        const pct = computeCompletionPct();
+        const summary = [
+          'Merhaba, ' + state.student + ' için ' + state.week + ' Adımplan Haftalık Gelişim Özeti:',
+          '• Sınav Alanı: ' + state.exam,
+          '• Görev Tamamlama: ' + state.done + '/' + state.total + ' (%' + pct + ')',
+          '• Haftalık Odak Süresi: ' + state.pomodoro + ' dk',
+          '• Son Deneme Neti: ' + state.net + ' Net',
+          '• Çalışma Serisi: ' + state.streak + ' Gün',
+          '• Koç Notu: ' + state.note,
+          'Detaylı rapor: ' + buildShareUrl()
+        ].join('\n');
+        copyText(summary, 'WhatsApp özet metni panoya kopyalandı.');
+      });
+
+      el.printBtn.addEventListener('click', function () {
+        window.print();
+      });
+
+      [
+        [el.inputStudent, 'student', 'text'],
+        [el.inputExam, 'exam', 'text'],
+        [el.inputWeek, 'week', 'text'],
+        [el.inputStreak, 'streak', 'int'],
+        [el.inputDone, 'done', 'int'],
+        [el.inputTotal, 'total', 'total'],
+        [el.inputPomodoro, 'pomodoro', 'int'],
+        [el.inputNet, 'net', 'text'],
+        [el.inputNote, 'note', 'text']
+      ].forEach(function (pair) {
+        const inputEl = pair[0];
+        const key = pair[1];
+        const kind = pair[2];
+        inputEl.addEventListener('input', function () {
+          if (kind === 'int') {
+            state[key] = parseNonNegativeInt(inputEl.value, 0);
+          } else if (kind === 'total') {
+            state[key] = Math.max(1, parseNonNegativeInt(inputEl.value, 1));
+          } else {
+            state[key] = inputEl.value;
+          }
+          renderReport();
+        });
+      });
+
+      syncInputs();
+      renderReport();
+    })();
+  </script>
+</body>
+</html>
