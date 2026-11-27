@@ -1,7 +1,11 @@
 # Değişiklik Günlüğü (Changelog)
 
 Bu dosya **İvme Akademi — Adımplan EdTech SaaS** projesindeki önemli sürüm değişikliklerini içerir.
-
+## [v1.6.0]
+### Eklenenler ve İyileştirmeler
+- **Yeni Sayfalar ve PWA Önbellekleme:** `program.html`, `student.html`, `coach-panel.html` ve `pricing.html` sayfaları eklendi; `index.html` navigasyon bağlantıları güncellendi ve `frontend/sw.js` önbellek listesine eklendi.
+- **Playwright E2E Testleri:** Yeni sayfalar ve kullanıcı akışları için yeni Playwright E2E testi eklendi.
+- **Kimlik Doğrulama ve Güvenlik İyileştirmeleri:** Kimlik doğrulama akışları geliştirildi; CodeQL statik analiz ve Dependabot bağımlılık güvenliği iyileştirmeleri uygulandı.
 ## [v1.5.0]
 
 ### Eklenenler ve İyileştirmeler
