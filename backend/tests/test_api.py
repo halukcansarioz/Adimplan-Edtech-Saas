@@ -426,3 +426,34 @@ def test_redis_rate_limit_exceeded_and_fallback_to_memory(monkeypatch):
     assert fallback_limited.status_code == 429
     main._rate_limit_store.clear()
 
+
+def test_redis_limiter_applies_the_strict_email_limit(monkeypatch):
+    import main
+
+    class FakeRedis:
+        def __init__(self):
+            self.counts = {}
+
+        def incr(self, key):
+            self.counts[key] = self.counts.get(key, 0) + 1
+            return self.counts[key]
+
+        def expire(self, key, seconds):
+            pass
+
+        def get(self, key):
+            return None
+
+        def setex(self, key, seconds, value):
+            pass
+
+    monkeypatch.setattr(main, "_redis_client", FakeRedis())
+    monkeypatch.delenv("SUPABASE_URL", raising=False)
+    monkeypatch.delenv("SUPABASE_ANON_KEY", raising=False)
+    monkeypatch.delenv("RESEND_API_KEY", raising=False)
+    codes = [
+        client.post("/api/notify/parent-email", json=EMAIL_BODY).status_code
+        for _ in range(main.NOTIFY_RATE_LIMIT_REQUESTS + 1)
+    ]
+    assert codes[-1] == 429
+    assert 429 not in codes[:-1]
