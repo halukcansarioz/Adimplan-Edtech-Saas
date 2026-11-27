@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Adimplan | Öğrenci Paneli</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            brand: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #0f172a; }
+    .breath-circle { transition: transform 1s ease-in-out, background-color 0.6s ease; }
+    .breath-inhale { transform: scale(1.28); background-color: #6366f1; }
+    .breath-hold { transform: scale(1.28); background-color: #8b5cf6; }
+    .breath-exhale { transform: scale(0.88); background-color: #06b6d4; }
+    .tab-btn.active { background: #eef2ff; color: #4338ca; font-weight: 600; }
+    .subtab-btn.active { background: #4f46e5; color: #ffffff; }
+    .fullscreen-weekly { position: fixed; inset: 0; z-index: 50; background: #ffffff; padding: 1.5rem; overflow: auto; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col lg:flex-row">
+  <header class="lg:hidden bg-white border-b px-4 py-3 flex items-center justify-between sticky top-0 z-30">
+    <div class="flex items-center gap-2 font-bold text-lg text-brand-600">
+      <span class="w-8 h-8 rounded-lg bg-brand-600 text-white flex items-center justify-center">A</span>
+      <span>Adimplan</span>
+    </div>
+    <button onclick="toggleMobileNav()" class="px-3 py-1.5 rounded-lg border text-sm font-medium">Menü</button>
+  </header>
+
+  <aside id="sidebar" class="hidden lg:flex lg:flex-col w-full lg:w-72 bg-white border-r border-slate-200 p-4 gap-5 shrink-0 lg:min-h-screen lg:sticky lg:top-0">
+    <div class="hidden lg:flex items-center justify-between px-2">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-brand-600 text-white font-extrabold flex items-center justify-center shadow-sm">A</div>
+        <div>
+          <div class="font-bold text-slate-900 leading-tight">Adimplan</div>
+          <div class="text-xs text-slate-500">Öğrenci Paneli</div>
+        </div>
+      </div>
+      <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">SEVİYE 1</span>
+    </div>
+
+    <nav class="space-y-4 text-sm overflow-y-auto flex-1">
+      <div>
+        <div class="px-2 mb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">1. Ana Sayfa</div>
+        <button data-section="home" onclick="switchSection('home')" class="tab-btn active w-full text-left px-3 py-2 rounded-xl flex items-center gap-2.5 hover:bg-slate-100">
+          <span>🏠</span><span>Ana Sayfa</span>
+        </button>
+      </div>
+
+      <div>
+        <div class="px-2 mb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">2. Program</div>
+        <div class="space-y-1">
+          <button data-section="program" data-tab="daily" onclick="switchSection('program','daily')" class="tab-btn w-full text-left px-3 py-2 rounded-xl flex items-center gap-2.5 hover:bg-slate-100"><span>📅</span><span>Günlük Program</span></button>
+          <button data-section="program" data-tab="weekly" onclick="switchSection('program','weekly')" class="tab-btn w-full text-left px-3 py-2 rounded-xl flex items-center gap-2.5 hover:bg-slate-100"><span>🗓️</span><span>Haftalık Program</span></button>
+          <button data-section="program" data-tab="meetings" onclick="switchSection('program','meetings')" class="tab-btn w-full text-left px-3 py-2 rounded-xl flex items-center gap-2.5 hover:bg-slate-100"><span>🤝</span><span>Görüşmelerim</span></button>
+          <button data-section="program" data-tab="pomodoro" onclick="switchSection('program','pomodoro')" class="tab-btn w-full text-left px-3 py-2 rounded-xl flex items-center gap-2.5 hover:bg-slate-100"><span>⏱️</span><span>Pomodoro</span></button>
+        </div>
+      </div>
+
+      <div>
+        <div class="px-2 mb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">3. Çalışma</div>
+        <div class="space-y-1">
+          <button data-section="study" data-tab="topics" onclick="switchSection('study','topics')" class="tab-btn w-full text-left px-3 py-2 rounded-xl flex items-center gap-2.5 hover:bg-slate-100"><span>📚</span><span>Konular</span></button>
+          <button data-section="study" data-tab="resources" onclick="switchSection('study','resources')" class="tab-btn w-full text-left px-3 py-2 rounded-xl flex items-center gap-2.5 hover:bg-slate-100"><span>📖</span><span>Kaynaklarım</span></button>
+          <button data-section="study" data-tab="questions" onclick="switchSection('study','questions')" class="tab-btn w-full text-left px-3 py-2 rounded-xl flex items-center gap-2.5 hover:bg-slate-100"><span>✍️</span><span>Soru Takibi</span></button>
+          <button data-section="study" data-tab="speedreading" onclick="switchSection('study','speedreading')" class="tab-btn w-full text-left px-3 py-2 rounded-xl flex items-center gap-2.5 hover:bg-slate-100"><span>⚡</span><span>Hızlı Okuma</span></button>
+        </div>
+      </div>
+
+      <div>
+        <div class="px-2 mb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">4. Deneme & Analiz</div>
+        <div class="space-y-1">
+          <button data-section="exams" data-tab="branch" onclick="switchSection('exams','branch')" class="tab-btn w-full text-left px-3 py-2 rounded-xl flex items-center gap-2.5 hover:bg-slate-100"><span>📝</span><span>Branş Deneme</span></button>
+          <button data-section="exams" data-tab="general" onclick="switchSection('exams','general')" class="tab-btn w-full text-left px-3 py-2 rounded-xl flex items-center gap-2.5 hover:bg-slate-100"><span>📊</span><span>Genel Deneme</span></button>
+          <button data-section="exams" data-tab="grades" onclick="switchSection('exams','grades')" class="tab-btn w-full text-left px-3 py-2 rounded-xl flex items-center gap-2.5 hover:bg-slate-100"><span>🎓</span><span>Okul Notu</span></button>
+          <button data-section="exams" data-tab="mistakes" onclick="switchSection('exams','mistakes')" class="tab-btn w-full text-left px-3 py-2 rounded-xl flex items-center gap-2.5 hover:bg-slate-100"><span>🔍</span><span>Yanlışlarım</span></button>
+        </div>
+      </div>
+
+      <div>
+        <div class="px-2 mb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">5. Hedef & Kişisel</div>
+        <div class="space-y-1">
+          <button data-section="personal" data-tab="goals" onclick="switchSection('personal','goals')" class="tab-btn w-full text-left px-3 py-2 rounded-xl flex items-center gap-2.5 hover:bg-slate-100"><span>🎯</span><span>Hedeflerim</span></button>
+          <button data-section="personal" data-tab="obp" onclick="switchSection('personal','obp')" class="tab-btn w-full text-left px-3 py-2 rounded-xl flex items-center gap-2.5 hover:bg-slate-100"><span>🧮</span><span>OBP & Yerleştirme</span></button>
+          <button data-section="personal" data-tab="messages" onclick="switchSection('personal','messages')" class="tab-btn w-full text-left px-3 py-2 rounded-xl flex items-center gap-2.5 hover:bg-slate-100"><span>💬</span><span>Mesajlar</span></button>
+          <button data-section="personal" data-tab="settings" onclick="switchSection('personal','settings')" class="tab-btn w-full text-left px-3 py-2 rounded-xl flex items-center gap-2.5 hover:bg-slate-100"><span>⚙️</span><span>Ayarlar</span></button>
+        </div>
+      </div>
+    </nav>
+  </aside>
+
+    <!-- 1. ANA SAYFA -->
+    <section id="sec-home" class="section-view space-y-6">
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+        <div class="flex items-center gap-4">
+          <div id="home-avatar" class="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-500 to-purple-600 text-white font-extrabold text-xl flex items-center justify-center shadow">ÖA</div>
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h1 id="home-student-name" class="text-xl font-bold">Öğrenci Adayı</h1>
+              <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800">SEVİYE 1</span>
+              <span id="home-exam-badge" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-brand-100 text-brand-700">YKS Adayı</span>
+            </div>
+            <div class="mt-2 w-64 max-w-full">
+              <div class="flex justify-between text-xs text-slate-500 mb-1"><span>Genel İlerleme</span><span id="home-progress-pct">0%</span></div>
+              <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div id="home-progress-bar" class="h-full bg-brand-600 rounded-full transition-all" style="width:0%"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-center">
+          <div class="text-xs text-slate-500 font-medium">Sınav Geri Sayımı</div>
+          <div id="exam-countdown" class="text-lg font-extrabold text-brand-600 mt-0.5">-- Gün -- Saat</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm"><div class="text-xs text-slate-500">Görevler</div><div id="stat-tasks" class="text-2xl font-bold mt-1">0 / 0</div></div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm"><div class="text-xs text-slate-500">Çalışma Serisi</div><div id="stat-streak" class="text-2xl font-bold mt-1 text-amber-600">5 Gün 🔥</div></div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm"><div class="text-xs text-slate-500">Tekrar Bekleyen</div><div id="stat-reviews" class="text-2xl font-bold mt-1 text-purple-600">0</div></div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm"><div class="text-xs text-slate-500">İlerleme / Kalan Seans</div><div id="stat-sessions" class="text-2xl font-bold mt-1 text-emerald-600">0% · 4 Seans</div></div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col items-center text-center">
+          <h2 class="font-bold text-base self-start">1 Dk Nefes Egzersizi</h2>
+          <p class="text-xs text-slate-500 self-start mb-4">Odaklanmak için 60 saniyelik nefes döngüsü</p>
+          <div id="breath-circle" class="breath-circle w-28 h-28 rounded-full bg-brand-500 text-white flex flex-col items-center justify-center font-bold shadow-md my-3">
+            <span id="breath-phase" class="text-sm">Hazır</span>
+            <span id="breath-timer" class="text-xl font-extrabold">60s</span>
+          </div>
+          <button id="breath-btn" onclick="toggleBreath()" class="mt-3 px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700">Başlat</button>
+        </div>
+
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-5">
+          <div>
+            <h2 class="font-bold text-base mb-2">Bugünkü Ruh Halin Nasıl?</h2>
+            <div class="grid grid-cols-5 gap-2" id="mood-buttons">
+              <button onclick="setMood('Çok kötü')" class="mood-btn p-2.5 rounded-xl border text-xs font-medium hover:bg-slate-50">😞<div class="mt-1">Çok kötü</div></button>
+              <button onclick="setMood('Kötü')" class="mood-btn p-2.5 rounded-xl border text-xs font-medium hover:bg-slate-50">😕<div class="mt-1">Kötü</div></button>
+              <button onclick="setMood('İdare eder')" class="mood-btn p-2.5 rounded-xl border text-xs font-medium hover:bg-slate-50">😐<div class="mt-1">İdare eder</div></button>
+              <button onclick="setMood('İyi')" class="mood-btn p-2.5 rounded-xl border text-xs font-medium hover:bg-slate-50">🙂<div class="mt-1">İyi</div></button>
+              <button onclick="setMood('Harika')" class="mood-btn p-2.5 rounded-xl border text-xs font-medium hover:bg-slate-50">🤩<div class="mt-1">Harika</div></button>
+            </div>
+            <div id="mood-status" class="text-xs text-slate-500 mt-2"></div>
+          </div>
+
+          <div>
+            <h2 class="font-bold text-base mb-2">Bugünün Planı (Günlük Görevler + Tekrar)</h2>
+            <div id="home-today-plan" class="space-y-2 text-sm"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="font-bold text-base">Görevlerin Listesi</h2>
+            <button onclick="switchSection('program','daily')" class="text-xs text-brand-600 font-semibold hover:underline">Programa Git →</button>
+          </div>
+          <div id="home-tasks-list" class="space-y-2"></div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <h2 class="font-bold text-base mb-3">Koç Notları</h2>
+          <div id="coach-notes-list" class="space-y-2.5 text-sm"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. PROGRAM -->
+    <section id="sec-program" class="section-view hidden space-y-5">
+      <div class="flex flex-wrap gap-2 bg-white p-2 rounded-2xl border border-slate-200">
+        <button data-subtab="daily" onclick="switchSubTab('program','daily')" class="subtab-btn px-4 py-2 rounded-xl text-sm font-medium">Günlük Program</button>
+        <button data-subtab="weekly" onclick="switchSubTab('program','weekly')" class="subtab-btn px-4 py-2 rounded-xl text-sm font-medium">Haftalık Program</button>
+        <button data-subtab="meetings" onclick="switchSubTab('program','meetings')" class="subtab-btn px-4 py-2 rounded-xl text-sm font-medium">Görüşmelerim</button>
+        <button data-subtab="pomodoro" onclick="switchSubTab('program','pomodoro')" class="subtab-btn px-4 py-2 rounded-xl text-sm font-medium">Pomodoro</button>
+      </div>
+
+      <div id="tab-program-daily" class="subtab-view bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
+        <div class="grid grid-cols-7 gap-2" id="daily-strip"></div>
+        <form onsubmit="addDailyTask(event)" class="flex gap-2">
+          <input id="new-daily-task" type="text" placeholder="Yeni günlük görev ekle..." class="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-sm" required />
+          <button class="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-semibold">Ekle</button>
+        </form>
+        <div id="daily-tasks-list" class="space-y-2"></div>
+      </div>
+
+      <div id="tab-program-weekly" class="subtab-view hidden bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <div><h2 class="font-bold text-lg">Haftalık Program</h2><span class="text-xs text-slate-500">Bu Hafta</span></div>
+          <button onclick="toggleWeeklyFullscreen()" class="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold hover:bg-slate-50">Tam Ekran (Esc)</button>
+        </div>
+        <div id="weekly-grid" class="grid grid-cols-1 md:grid-cols-7 gap-3"></div>
+      </div>
+
+      <div id="tab-program-meetings" class="subtab-view hidden bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="font-bold text-lg">Planlı Görüşmelerim</h2>
+          <button onclick="switchSection('personal','messages')" class="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-semibold">Mesajlara Git →</button>
+        </div>
+        <div id="meetings-list" class="space-y-3"></div>
+      </div>
+
+      <div id="tab-program-pomodoro" class="subtab-view hidden bg-white rounded-2xl border border-slate-200 p-5 space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 class="font-bold text-lg">Pomodoro Sayacı</h2>
+          <div class="flex gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+            <button onclick="setPomoFilter('today')" id="pomo-filter-today" class="px-3 py-1.5 rounded-lg bg-white shadow-sm">Bugün</button>
+            <button onclick="setPomoFilter('week')" id="pomo-filter-week" class="px-3 py-1.5 rounded-lg">Bu Hafta</button>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+          <div class="flex flex-col items-center">
+            <div class="relative w-48 h-48">
+              <svg class="w-48 h-48 -rotate-90" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="54" fill="none" stroke="#e2e8f0" stroke-width="8" />
+                <circle id="pomo-ring" cx="60" cy="60" r="54" fill="none" stroke="#4f46e5" stroke-width="8" stroke-linecap="round" stroke-dasharray="339.29" stroke-dashoffset="0" />
+              </svg>
+              <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span id="pomo-display" class="text-3xl font-extrabold">25:00</span>
+                <span id="pomo-label" class="text-xs text-slate-500 mt-1">Odaklanma</span>
+              </div>
+            </div>
+            <div class="flex flex-wrap justify-center gap-2 mt-4">
+              <button onclick="setPomoMinutes(15)" class="px-3 py-1.5 rounded-lg border text-xs font-semibold hover:bg-slate-50">15dk</button>
+              <button onclick="setPomoMinutes(25)" class="px-3 py-1.5 rounded-lg border text-xs font-semibold hover:bg-slate-50">25dk</button>
+              <button onclick="setPomoMinutes(45)" class="px-3 py-1.5 rounded-lg border text-xs font-semibold hover:bg-slate-50">45dk</button>
+              <button onclick="setPomoMinutes(60)" class="px-3 py-1.5 rounded-lg border text-xs font-semibold hover:bg-slate-50">60dk</button>
+              <button onclick="setCustomPomo()" class="px-3 py-1.5 rounded-lg border text-xs font-semibold hover:bg-slate-50">Özel</button>
+            </div>
+            <div id="pomo-custom-wrap" class="hidden mt-2 flex gap-2">
+              <input id="pomo-custom-min" type="number" min="1" max="180" value="30" class="w-20 px-2 py-1 border rounded-lg text-xs" />
+              <button onclick="applyCustomPomo()" class="px-3 py-1 rounded-lg bg-slate-800 text-white text-xs">Uygula</button>
+            </div>
+          </div>
+          <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+              <div><label class="text-xs text-slate-500">Ders</label><input id="pomo-subject" type="text" value="Matematik" class="w-full mt-1 px-3 py-2 rounded-xl border text-sm" /></div>
+              <div><label class="text-xs text-slate-500">Konu</label><input id="pomo-topic" type="text" value="Problemler" class="w-full mt-1 px-3 py-2 rounded-xl border text-sm" /></div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button id="pomo-start-btn" onclick="togglePomodoro()" class="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-semibold">Başlat</button>
+              <button onclick="savePomodoroSession()" class="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold">Kaydet</button>
+              <button onclick="resetPomodoro()" class="px-4 py-2 rounded-xl border text-sm font-semibold">Sıfırla</button>
+            </div>
+            <div>
+              <h3 class="font-semibold text-sm mb-2">Son Çalışmalarım</h3>
+              <div id="pomo-history" class="space-y-1.5 text-xs max-h-40 overflow-y-auto"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. ÇALIŞMA -->
+    <section id="sec-study" class="section-view hidden space-y-5">
+      <div class="flex flex-wrap gap-2 bg-white p-2 rounded-2xl border border-slate-200">
+        <button data-subtab="topics" onclick="switchSubTab('study','topics')" class="subtab-btn px-4 py-2 rounded-xl text-sm font-medium">Konular</button>
+        <button data-subtab="resources" onclick="switchSubTab('study','resources')" class="subtab-btn px-4 py-2 rounded-xl text-sm font-medium">Kaynaklarım</button>
+        <button data-subtab="questions" onclick="switchSubTab('study','questions')" class="subtab-btn px-4 py-2 rounded-xl text-sm font-medium">Soru Takibi</button>
+        <button data-subtab="speedreading" onclick="switchSubTab('study','speedreading')" class="subtab-btn px-4 py-2 rounded-xl text-sm font-medium">Hızlı Okuma</button>
+      </div>
+
+      <div id="tab-study-topics" class="subtab-view bg-white rounded-2xl border border-slate-200 p-5 space-y-5">
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="font-bold text-sm text-amber-900">🔒 Çalışma Notum (Koçun Görmediği Kişisel Alan)</label>
+            <span id="personal-note-count" class="text-xs text-amber-700 font-medium">0 / 2000</span>
+          </div>
+          <textarea id="personal-study-note" maxlength="2000" oninput="savePersonalNote()" rows="3" placeholder="Sadece senin görebileceğin kişisel çalışma notların..." class="w-full p-3 rounded-xl border border-amber-200 bg-white text-sm"></textarea>
+        </div>
+        <div class="flex flex-wrap gap-3 items-center justify-between">
+          <input id="topic-search" oninput="renderTopics()" type="text" placeholder="Ders ara..." class="px-3 py-2 rounded-xl border text-sm w-64 max-w-full" />
+          <button onclick="toggleAllTopics()" class="px-4 py-2 rounded-xl border text-sm font-semibold hover:bg-slate-50">Tümünü Seç</button>
+        </div>
+        <div id="topics-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+      </div>
+
+      <div id="tab-study-resources" class="subtab-view hidden bg-white rounded-2xl border border-slate-200 p-5 space-y-5">
+        <div class="flex items-center justify-between">
+          <h2 class="font-bold text-lg">Kaynaklarım</h2>
+          <button onclick="toggleForm('resource-form')" class="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-semibold">+ Kaynak Ekle</button>
+        </div>
+        <form id="resource-form" onsubmit="addResource(event)" class="hidden grid grid-cols-1 md:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border">
+          <input id="res-name" type="text" placeholder="Kitap / Kaynak Adı" class="px-3 py-2 rounded-xl border text-sm" required />
+          <input id="res-subject" type="text" placeholder="Ders (örn. Matematik)" class="px-3 py-2 rounded-xl border text-sm" required />
+          <input id="res-pages" type="number" min="1" placeholder="Toplam Sayfa" class="px-3 py-2 rounded-xl border text-sm" required />
+          <button class="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold">Kaydet</button>
+        </form>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3" id="resource-counters"></div>
+        <div id="resources-list" class="space-y-2.5"></div>
+      </div>
+
+      <div id="tab-study-questions" class="subtab-view hidden bg-white rounded-2xl border border-slate-200 p-5 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 class="font-bold text-lg">Soru Takibi</h2>
+          <div class="flex gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold" id="q-period-tabs">
+            <button onclick="setQPeriod('daily')" class="q-period-btn px-3 py-1.5 rounded-lg bg-white shadow-sm" data-period="daily">Günlük</button>
+            <button onclick="setQPeriod('weekly')" class="q-period-btn px-3 py-1.5 rounded-lg" data-period="weekly">Haftalık</button>
+            <button onclick="setQPeriod('monthly')" class="q-period-btn px-3 py-1.5 rounded-lg" data-period="monthly">Aylık</button>
+            <button onclick="setQPeriod('all')" class="q-period-btn px-3 py-1.5 rounded-lg" data-period="all">Tümü</button>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="quickAddQuestion('TYT Türkçe')" class="px-3 py-1.5 rounded-xl bg-brand-50 text-brand-700 text-xs font-semibold hover:bg-brand-100">+ TYT Türkçe</button>
+          <button onclick="quickAddQuestion('TYT Matematik')" class="px-3 py-1.5 rounded-xl bg-brand-50 text-brand-700 text-xs font-semibold hover:bg-brand-100">+ TYT Matematik</button>
+          <button onclick="quickAddQuestion('TYT Fen')" class="px-3 py-1.5 rounded-xl bg-brand-50 text-brand-700 text-xs font-semibold hover:bg-brand-100">+ TYT Fen</button>
+          <button onclick="quickAddQuestion('TYT Sosyal')" class="px-3 py-1.5 rounded-xl bg-brand-50 text-brand-700 text-xs font-semibold hover:bg-brand-100">+ TYT Sosyal</button>
+          <button onclick="quickAddQuestion('AYT Matematik')" class="px-3 py-1.5 rounded-xl bg-brand-50 text-brand-700 text-xs font-semibold hover:bg-brand-100">+ AYT Matematik</button>
+          <button onclick="quickAddQuestion('LGS Türkçe')" class="px-3 py-1.5 rounded-xl bg-brand-50 text-brand-700 text-xs font-semibold hover:bg-brand-100">+ LGS Türkçe</button>
+        </div>
+        <form onsubmit="addQuestionLog(event)" class="grid grid-cols-2 md:grid-cols-5 gap-2 bg-slate-50 p-3 rounded-xl border">
+          <input id="q-subject" type="text" placeholder="Ders" value="TYT Matematik" class="px-3 py-2 rounded-xl border text-sm" required />
+          <input id="q-correct" type="number" min="0" placeholder="Doğru" class="px-3 py-2 rounded-xl border text-sm" required />
+          <input id="q-wrong" type="number" min="0" placeholder="Yanlış" class="px-3 py-2 rounded-xl border text-sm" required />
+          <input id="q-blank" type="number" min="0" placeholder="Boş" value="0" class="px-3 py-2 rounded-xl border text-sm" required />
+          <button class="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-semibold">Ekle & Net Hesapla</button>
+        </form>
+        <div id="questions-summary" class="text-sm font-semibold text-slate-700"></div>
+        <div id="questions-list" class="space-y-2"></div>
+      </div>
+
+      <div id="tab-study-speedreading" class="subtab-view hidden bg-white rounded-2xl border border-slate-200 p-5 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 class="font-bold text-lg">Hızlı Okuma Stüdyosu</h2>
+          <div class="flex gap-2">
+            <button onclick="setReaderMode('rsvp')" id="mode-rsvp" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-brand-600 text-white">Görsel RSVP</button>
+            <button onclick="setReaderMode('tts')" id="mode-tts" class="px-3 py-1.5 rounded-xl text-xs font-semibold border">Sesli Okuma</button>
+          </div>
+        </div>
+        <div class="bg-slate-900 text-white rounded-2xl p-8 text-center min-h-[140px] flex flex-col items-center justify-center">
+          <div id="rsvp-word" class="text-3xl md:text-4xl font-extrabold tracking-wide">Hazır</div>
+          <div id="rsvp-progress" class="text-xs text-slate-400 mt-2">0 / 0 kelime</div>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <button onclick="setWpm(150)" class="px-3 py-1.5 rounded-lg border text-xs font-semibold">150 WPM</button>
+          <button onclick="setWpm(300)" class="px-3 py-1.5 rounded-lg border text-xs font-semibold">300 WPM</button>
+          <button onclick="setWpm(500)" class="px-3 py-1.5 rounded-lg border text-xs font-semibold">500 WPM</button>
+          <button onclick="setWpm(800)" class="px-3 py-1.5 rounded-lg border text-xs font-semibold">800 WPM</button>
+          <div class="flex items-center gap-2 flex-1 min-w-[200px]">
+            <input id="wpm-slider" type="range" min="80" max="1000" value="300" oninput="setWpm(this.value)" class="w-full" />
+            <span id="wpm-label" class="text-xs font-bold w-20">300 WPM</span>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="loadPresetText(0)" class="px-3 py-1.5 rounded-lg bg-slate-100 text-xs font-medium">Metin 1: Odaklanma</button>
+          <button onclick="loadPresetText(1)" class="px-3 py-1.5 rounded-lg bg-slate-100 text-xs font-medium">Metin 2: Paragraf Stratejisi</button>
+          <button onclick="loadPresetText(2)" class="px-3 py-1.5 rounded-lg bg-slate-100 text-xs font-medium">Metin 3: Bilimsel Okuma</button>
+          <button onclick="loadPresetText(3)" class="px-3 py-1.5 rounded-lg bg-slate-100 text-xs font-medium">Metin 4: Sınav Psikolojisi</button>
+        </div>
+        <textarea id="speed-text-input" rows="3" placeholder="Kendi metnini buraya yapıştır..." class="w-full p-3 rounded-xl border text-sm"></textarea>
+        <div class="flex gap-2">
+          <button id="speed-play-btn" onclick="toggleSpeedRead()" class="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-semibold">Başlat</button>
+          <button onclick="resetSpeedRead()" class="px-4 py-2 rounded-xl border text-sm font-semibold">Sıfırla</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. DENEME & ANALİZ -->
+    <section id="sec-exams" class="section-view hidden space-y-5">
+      <div class="flex flex-wrap gap-2 bg-white p-2 rounded-2xl border border-slate-200">
+        <button data-subtab="branch" onclick="switchSubTab('exams','branch')" class="subtab-btn px-4 py-2 rounded-xl text-sm font-medium">Branş Deneme</button>
+        <button data-subtab="general" onclick="switchSubTab('exams','general')" class="subtab-btn px-4 py-2 rounded-xl text-sm font-medium">Genel Deneme</button>
+        <button data-subtab="grades" onclick="switchSubTab('exams','grades')" class="subtab-btn px-4 py-2 rounded-xl text-sm font-medium">Okul Notu</button>
+        <button data-subtab="mistakes" onclick="switchSubTab('exams','mistakes')" class="subtab-btn px-4 py-2 rounded-xl text-sm font-medium">Yanlışlarım</button>
+      </div>
+
+      <div id="tab-exams-branch" class="subtab-view bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="font-bold text-lg">Branş Denemeleri</h2>
+          <button onclick="toggleForm('branch-form')" class="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-semibold">+ Deneme Ekle</button>
+        </div>
+        <form id="branch-form" onsubmit="addBranchExam(event)" class="hidden grid grid-cols-2 md:grid-cols-5 gap-2 bg-slate-50 p-3 rounded-xl border">
+          <select id="be-subject" class="px-3 py-2 rounded-xl border text-sm"><option>Türkçe</option><option>Matematik</option><option>Fen</option><option>Sosyal</option></select>
+          <input id="be-name" type="text" placeholder="Deneme Adı" class="px-3 py-2 rounded-xl border text-sm" required />
+          <input id="be-d" type="number" min="0" placeholder="Doğru" class="px-3 py-2 rounded-xl border text-sm" required />
+          <input id="be-y" type="number" min="0" placeholder="Yanlış" class="px-3 py-2 rounded-xl border text-sm" required />
+          <button class="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold">Kaydet</button>
+        </form>
+        <div class="flex flex-wrap gap-2" id="branch-subject-tabs"></div>
+        <div id="branch-exams-list" class="space-y-2"></div>
+      </div>
+
+      <div id="tab-exams-general" class="subtab-view hidden bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h2 class="font-bold text-lg">Genel Deneme Analizi</h2>
+          <div class="flex gap-2">
+            <button onclick="setChartType('bar')" class="px-3 py-1.5 rounded-lg border text-xs font-semibold">Çubuk</button>
+            <button onclick="setChartType('line')" class="px-3 py-1.5 rounded-lg border text-xs font-semibold">Net Gelişim</button>
+            <button onclick="setChartType('pie')" class="px-3 py-1.5 rounded-lg border text-xs font-semibold">Pasta</button>
+            <button onclick="toggleForm('general-form')" class="px-4 py-1.5 rounded-xl bg-brand-600 text-white text-xs font-semibold">+ Deneme Ekle</button>
+          </div>
+        </div>
+        <form id="general-form" onsubmit="addGeneralExam(event)" class="hidden grid grid-cols-2 md:grid-cols-4 gap-2 bg-slate-50 p-3 rounded-xl border">
+          <input id="ge-name" type="text" placeholder="Deneme Adı (ör. TYT-4)" class="px-3 py-2 rounded-xl border text-sm" required />
+          <input id="ge-net" type="number" step="0.25" placeholder="Toplam Net" class="px-3 py-2 rounded-xl border text-sm" required />
+          <input id="ge-date" type="date" class="px-3 py-2 rounded-xl border text-sm" required />
+          <button class="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold">Kaydet</button>
+        </form>
+        <div id="general-chart-box" class="bg-slate-50 border rounded-xl p-4 min-h-[180px]"></div>
+        <div id="general-exams-list" class="space-y-2"></div>
+      </div>
+
+      <div id="tab-exams-grades" class="subtab-view hidden bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="font-bold text-lg">Okul Notları & Karne Tahmini</h2>
+          <div id="karne-estimate" class="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-800 font-bold text-sm">Karne Tahmini: --</div>
+        </div>
+        <form onsubmit="addSchoolGrade(event)" class="grid grid-cols-2 md:grid-cols-5 gap-2 bg-slate-50 p-3 rounded-xl border">
+          <input id="sg-subject" type="text" placeholder="Ders" class="px-3 py-2 rounded-xl border text-sm" required />
+          <input id="sg-written" type="number" min="0" max="100" placeholder="Yazılı" class="px-3 py-2 rounded-xl border text-sm" required />
+          <input id="sg-oral" type="number" min="0" max="100" placeholder="Sözlü" class="px-3 py-2 rounded-xl border text-sm" required />
+          <input id="sg-project" type="number" min="0" max="100" placeholder="Proje" class="px-3 py-2 rounded-xl border text-sm" required />
+          <button class="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-semibold">Ekle</button>
+        </form>
+        <div id="school-grades-list" class="space-y-2"></div>
+      </div>
+
+      <div id="tab-exams-mistakes" class="subtab-view hidden bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h2 class="font-bold text-lg">Yanlışlarım</h2>
+          <div class="flex gap-2">
+            <button onclick="setMistakeFilter('today')" class="px-3 py-1.5 rounded-lg border text-xs font-semibold">Bugün</button>
+            <button onclick="setMistakeFilter('week')" class="px-3 py-1.5 rounded-lg border text-xs font-semibold">Bu Hafta</button>
+            <button onclick="setMistakeFilter('all')" class="px-3 py-1.5 rounded-lg border text-xs font-semibold">Toplam</button>
+            <button onclick="toggleForm('mistake-form')" class="px-4 py-1.5 rounded-xl bg-brand-600 text-white text-xs font-semibold">+ Manuel Yanlış Ekle</button>
+          </div>
+        </div>
+        <form id="mistake-form" onsubmit="addMistake(event)" class="hidden grid grid-cols-1 md:grid-cols-4 gap-2 bg-slate-50 p-3 rounded-xl border">
+          <input id="m-subject" type="text" placeholder="Ders" class="px-3 py-2 rounded-xl border text-sm" required />
+          <input id="m-topic" type="text" placeholder="Konu" class="px-3 py-2 rounded-xl border text-sm" required />
+          <input id="m-note" type="text" placeholder="Hata nedeni" class="px-3 py-2 rounded-xl border text-sm" required />
+          <button class="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold">Kaydet</button>
+        </form>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3" id="mistakes-summary-cards"></div>
+        <div id="mistakes-list" class="space-y-2"></div>
+      </div>
+    </section>
+
+    <!-- 5. HEDEF & KİŞİSEL -->
+    <section id="sec-personal" class="section-view hidden space-y-5">
+      <div class="flex flex-wrap gap-2 bg-white p-2 rounded-2xl border border-slate-200">
+        <button data-subtab="goals" onclick="switchSubTab('personal','goals')" class="subtab-btn px-4 py-2 rounded-xl text-sm font-medium">Hedeflerim</button>
+        <button data-subtab="obp" onclick="switchSubTab('personal','obp')" class="subtab-btn px-4 py-2 rounded-xl text-sm font-medium">OBP & Yerleştirme</button>
+        <button data-subtab="messages" onclick="switchSubTab('personal','messages')" class="subtab-btn px-4 py-2 rounded-xl text-sm font-medium">Mesajlar</button>
+        <button data-subtab="settings" onclick="switchSubTab('personal','settings')" class="subtab-btn px-4 py-2 rounded-xl text-sm font-medium">Ayarlar</button>
+      </div>
+
+      <div id="tab-personal-goals" class="subtab-view bg-white rounded-2xl border border-slate-200 p-5 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <h2 class="font-bold text-lg">Hedeflerim</h2>
+            <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">Çalışma Serisi: 5 Gün 🔥</span>
+          </div>
+          <button onclick="toggleForm('goal-form')" class="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-semibold">+ Özel Hedef Ekle</button>
+        </div>
+        <form id="goal-form" onsubmit="addGoal(event)" class="hidden grid grid-cols-1 md:grid-cols-3 gap-2 bg-slate-50 p-3 rounded-xl border">
+          <input id="goal-title" type="text" placeholder="Hedef başlığı" class="px-3 py-2 rounded-xl border text-sm" required />
+          <input id="goal-target" type="text" placeholder="Hedef ölçütü (ör. 100 soru)" class="px-3 py-2 rounded-xl border text-sm" required />
+          <button class="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold">Ekle</button>
+        </form>
+        <div class="grid grid-cols-3 gap-3" id="goals-status-cards"></div>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3" id="goals-counters"></div>
+        <div>
+          <h3 class="font-bold text-sm mb-2">Sana Özel Öneriler</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="goals-suggestions"></div>
+        </div>
+        <div>
+          <h3 class="font-bold text-sm mb-2">Hızlı Başlangıç Şablonları</h3>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-2" id="goals-templates"></div>
+        </div>
+        <div class="flex gap-2 border-b pb-2">
+          <button onclick="setGoalTab('active')" id="goal-tab-active" class="px-3 py-1 rounded-lg bg-brand-600 text-white text-xs font-semibold">Aktif</button>
+          <button onclick="setGoalTab('past')" id="goal-tab-past" class="px-3 py-1 rounded-lg border text-xs font-semibold">Geçmiş</button>
+        </div>
+        <div id="goals-list" class="space-y-2"></div>
+      </div>
+
+      <div id="tab-personal-obp" class="subtab-view hidden bg-white rounded-2xl border border-slate-200 p-5 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h2 class="font-bold text-lg">OBP & Yerleştirme Puanı Hesaplayıcı</h2>
+          <button onclick="estimateDiplomaFromGrades()" class="px-4 py-2 rounded-xl bg-slate-800 text-white text-xs font-semibold">Okul Notlarımdan Tahmin Et</button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-4 bg-slate-50 p-4 rounded-xl border">
+            <div>
+              <div class="flex justify-between text-xs font-semibold mb-1"><span>Diploma Notu (50–100)</span><span id="obp-diploma-val">85</span></div>
+              <input id="obp-diploma-range" type="range" min="50" max="100" step="0.5" value="85" oninput="syncDiploma(this.value)" class="w-full" />
+              <input id="obp-diploma-input" type="number" min="50" max="100" step="0.5" value="85" oninput="syncDiploma(this.value)" class="mt-2 w-full px-3 py-2 rounded-xl border text-sm bg-white" />
+            </div>
+            <div>
+              <label class="text-xs font-semibold">Tahmini Ham Sınav Puanı (100–500)</label>
+              <input id="obp-raw-score" type="number" min="100" max="500" step="0.5" value="380" oninput="calcOBP()" class="mt-1 w-full px-3 py-2 rounded-xl border text-sm bg-white" />
+            </div>
+          </div>
+          <div class="grid grid-cols-1 gap-3">
+            <div class="p-4 rounded-xl border bg-brand-50 border-brand-100"><div class="text-xs text-brand-700">OBP (Diploma × 5)</div><div id="obp-score" class="text-2xl font-extrabold text-brand-700">425.00</div></div>
+            <div class="p-4 rounded-xl border bg-emerald-50 border-emerald-100"><div class="text-xs text-emerald-700">Sınava Katkı (OBP × 0.12)</div><div id="obp-contrib" class="text-2xl font-extrabold text-emerald-700">+51.00</div></div>
+            <div class="p-4 rounded-xl border bg-slate-900 text-white"><div class="text-xs text-slate-300">Birleşik Yerleştirme Puanı</div><div id="obp-total" class="text-3xl font-extrabold">431.00</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-personal-messages" class="subtab-view hidden bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
+        <h2 class="font-bold text-lg">Koçumla Mesajlar</h2>
+        <div id="chat-messages" class="space-y-3 max-h-80 overflow-y-auto bg-slate-50 p-4 rounded-xl border"></div>
+        <form onsubmit="sendMessage(event)" class="flex flex-wrap gap-2 items-center">
+          <input id="chat-input" type="text" placeholder="Koçuna mesaj yaz..." class="flex-1 min-w-[200px] px-3 py-2 rounded-xl border text-sm" />
+          <label class="px-3 py-2 rounded-xl border text-xs font-semibold cursor-pointer hover:bg-slate-50">
+            📎 Dosya/Görsel
+            <input id="chat-file" type="file" accept="image/*,.pdf,.doc,.docx" class="hidden" onchange="previewChatFile()" />
+          </label>
+          <button class="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-semibold">Gönder</button>
+        </form>
+        <div id="chat-file-preview" class="text-xs text-slate-500"></div>
+      </div>
+
+      <div id="tab-personal-settings" class="subtab-view hidden bg-white rounded-2xl border border-slate-200 p-5 space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <form onsubmit="saveProfile(event)" class="space-y-3 bg-slate-50 p-4 rounded-xl border">
+            <h3 class="font-bold text-base">Profil Özeti</h3>
+            <div><label class="text-xs text-slate-500">Ad Soyad</label><input id="set-name" type="text" value="Öğrenci Adayı" class="w-full mt-1 px-3 py-2 rounded-xl border text-sm bg-white" required /></div>
+            <div><label class="text-xs text-slate-500">Hedef Sınav</label><select id="set-exam" class="w-full mt-1 px-3 py-2 rounded-xl border text-sm bg-white"><option value="YKS">YKS Adayı</option><option value="LGS">LGS Adayı</option></select></div>
+            <div><label class="text-xs text-slate-500">Sınıf / Alan</label><input id="set-grade" type="text" value="12. Sınıf - Sayısal" class="w-full mt-1 px-3 py-2 rounded-xl border text-sm bg-white" /></div>
+            <button class="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-semibold">Profili Güncelle</button>
+            <div id="profile-msg" class="text-xs text-emerald-600"></div>
+          </form>
+
+          <form onsubmit="changePassword(event)" class="space-y-3 bg-slate-50 p-4 rounded-xl border">
+            <h3 class="font-bold text-base">Şifre Değiştir</h3>
+            <div><label class="text-xs text-slate-500">Mevcut Şifre</label><input id="pw-current" type="password" autocomplete="current-password" class="w-full mt-1 px-3 py-2 rounded-xl border text-sm bg-white" required /></div>
+            <div><label class="text-xs text-slate-500">Yeni Şifre</label><input id="pw-new" type="password" autocomplete="new-password" minlength="8" class="w-full mt-1 px-3 py-2 rounded-xl border text-sm bg-white" required /></div>
+            <div><label class="text-xs text-slate-500">Yeni Şifre (Tekrar)</label><input id="pw-confirm" type="password" autocomplete="new-password" minlength="8" class="w-full mt-1 px-3 py-2 rounded-xl border text-sm bg-white" required /></div>
+            <button class="px-4 py-2 rounded-xl bg-slate-800 text-white text-sm font-semibold">Şifreyi Güncelle</button>
+            <div id="pw-msg" class="text-xs"></div>
+          </form>
+        </div>
+      </div>
+    </section>
+</main>
+  <script>
+    function escapeHtml(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    const STORAGE_KEY = 'adimplan_student_state_v1';
+    const DAYS = ['PZT', 'SAL', 'ÇAR', 'PER', 'CUM', 'CMT', 'PAZ'];
+    const PRESET_TEXTS = [
+      'Odaklanma, zihinsel dağınıklığı azaltarak tek bir hedefe yönelme sanatıdır. Düzenli nefes ve kısa molalar verimliliği artırır.',
+      'Paragraf sorularında önce soru kökünü okumak, metinde hangi bilgiye odaklanacağını netleştirir ve zaman kazandırır.',
+      'Bilimsel okuma yaparken ana fikri, yardımcı düşünceleri ve neden-sonuç ilişkilerini zihinde haritalamak kalıcılığı yükseltir.',
+      'Sınav psikolojisini yönetmenin en etkili yolu, deneme analizlerini düzenli yaparak kontrol edebileceğin adımlara odaklanmaktır.'
+    ];
+
+    const defaultState = {
+      profile: { name: 'Öğrenci Adayı', exam: 'YKS', grade: '12. Sınıf - Sayısal' },
+      mood: 'İyi',
+      selectedDay: 0,
+      dailyTasks: [
+        { id: 1, day: 0, title: 'TYT Matematik 40 Soru', type: 'Günlük Görev', done: true },
+        { id: 2, day: 0, title: 'Paragraf Tekrarı (20 dk)', type: 'Tekrar', done: false },
+        { id: 3, day: 0, title: 'Fizik Optikler Konu Özeti', type: 'Tekrar', done: false },
+        { id: 4, day: 1, title: 'AYT Geometri Üçgenler', type: 'Günlük Görev', done: false }
+      ],
+      coachNotes: [
+        { id: 1, date: 'Bugün', text: 'Problemler konusunda hızın artıyor, haftalık deneme analizini unutma.' },
+        { id: 2, date: '2 gün önce', text: 'Paragraf süreni 35 dakikanın altına çekmek için RSVP çalışmasına devam et.' }
+      ],
+      meetings: [
+        { id: 1, title: 'Haftalık Koçluk Değerlendirmesi', date: 'Cumartesi 14:00', coach: 'Elif Öğretmen', status: 'Planlandı' },
+        { id: 2, title: 'Deneme Analiz Görüşmesi', date: 'Çarşamba 18:30', coach: 'Elif Öğretmen', status: 'Planlandı' }
+      ],
+      pomodoroHistory: [
+        { id: 1, subject: 'Matematik', topic: 'Problemler', minutes: 25, period: 'today' },
+        { id: 2, subject: 'Türkçe', topic: 'Paragraf', minutes: 45, period: 'week' }
+      ],
+      personalNote: '',
+      topics: [
+        { id: 1, subject: 'TYT Türkçe', name: 'Sözcükte Anlam', done: true },
+        { id: 2, subject: 'TYT Türkçe', name: 'Paragraf Yapısı', done: false },
+        { id: 3, subject: 'TYT Matematik', name: 'Temel Kavramlar', done: true },
+        { id: 4, subject: 'TYT Matematik', name: 'Sayı Problemleri', done: false },
+        { id: 5, subject: 'TYT Fizik', name: 'Hareket ve Kuvvet', done: false },
+        { id: 6, subject: 'AYT Matematik', name: 'Türev', done: false }
+      ],
+      resources: [
+        { id: 1, name: '345 TYT Matematik', subject: 'Matematik', pages: 380, donePages: 210, completed: false },
+        { id: 2, name: 'Limit Paragraf', subject: 'Türkçe', pages: 240, donePages: 240, completed: true }
+      ],
+      questions: [
+        { id: 1, subject: 'TYT Türkçe', d: 32, y: 5, b: 3, period: 'daily' },
+        { id: 2, subject: 'TYT Matematik', d: 28, y: 4, b: 8, period: 'weekly' }
+      ],
+      branchExams: [
+        { id: 1, subject: 'Türkçe', name: 'Türkçe Branş #1', d: 34, y: 4 },
+        { id: 2, subject: 'Matematik', name: 'Matematik Branş #1', d: 30, y: 6 }
+      ],
+      generalExams: [
+        { id: 1, name: 'TYT-1', net: 74.5, date: '2026-11-01' },
+        { id: 2, name: 'TYT-2', net: 79.25, date: '2026-11-12' },
+        { id: 3, name: 'TYT-3', net: 83.75, date: '2026-11-24' }
+      ],
+      schoolGrades: [
+        { id: 1, subject: 'Matematik', written: 88, oral: 92, project: 90 },
+        { id: 2, subject: 'Türk Dili', written: 84, oral: 90, project: 85 }
+      ],
+      mistakes: [
+        { id: 1, subject: 'Matematik', topic: 'Mutlak Değer', note: 'İşaret incelemesi eksik', period: 'today', solved: false },
+        { id: 2, subject: 'Fizik', topic: 'Kaldırma Kuvveti', note: 'Birim dönüşümü hatası', period: 'week', solved: true }
+      ],
+      goals: [
+        { id: 1, title: 'Günlük 120 Soru', target: '120 soru/gün', done: false },
+        { id: 2, title: 'TYT 85 Net Barajı', target: '85 Net', done: true }
+      ],
+      diplomaScore: 85,
+      messages: [
+        { id: 1, sender: 'coach', text: 'Merhaba! Bugünkü programını kontrol ettim, harika gidiyorsun.', time: '09:30' },
+        { id: 2, sender: 'student', text: 'Teşekkürler hocam, akşam deneme analizini paylaşacağım.', time: '09:42' }
+      ]
+    };
+
+    let state = loadState();
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return structuredClone(defaultState);
+        return Object.assign(structuredClone(defaultState), JSON.parse(raw));
+      } catch (e) {
+        return structuredClone(defaultState);
+      }
+    }
+    function saveState() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+    }
+
+    function toggleMobileNav() {
+      document.getElementById('sidebar').classList.toggle('hidden');
+    }
+
+    function switchSection(section, subtab) {
+      document.querySelectorAll('.section-view').forEach(el => el.classList.add('hidden'));
+      document.getElementById('sec-' + section).classList.remove('hidden');
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        const match = btn.dataset.section === section && (!subtab || btn.dataset.tab === subtab);
+        btn.classList.toggle('active', match);
+      });
+      if (subtab) switchSubTab(section, subtab);
+      if (window.innerWidth < 1024) document.getElementById('sidebar').classList.add('hidden');
+    }
+
+    function switchSubTab(section, subtab) {
+      const secEl = document.getElementById('sec-' + section);
+      secEl.querySelectorAll('.subtab-view').forEach(el => el.classList.add('hidden'));
+      const target = document.getElementById('tab-' + section + '-' + subtab);
+      if (target) target.classList.remove('hidden');
+      secEl.querySelectorAll('.subtab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.subtab === subtab);
+      });
+      document.querySelectorAll('.tab-btn[data-section="' + section + '"]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === subtab);
+      });
+    }
+
+    function toggleForm(id) {
+      document.getElementById(id).classList.toggle('hidden');
+    }
+
+    // 1. ANA SAYFA
+    function updateCountdown() {
+      const target = state.profile.exam === 'LGS' ? new Date('2027-06-06T09:30:00') : new Date('2027-06-20T10:15:00');
+      const diff = Math.max(0, target - new Date());
+      const days = Math.floor(diff / 86400000);
+      const hours = Math.floor((diff % 86400000) / 3600000);
+      document.getElementById('exam-countdown').textContent = days + ' Gün ' + hours + ' Saat';
+    }
+
+    let breathTimer = null, breathSec = 60, breathRunning = false;
+    function toggleBreath() {
+      const btn = document.getElementById('breath-btn');
+      const circle = document.getElementById('breath-circle');
+      const phase = document.getElementById('breath-phase');
+      const timerEl = document.getElementById('breath-timer');
+      if (breathRunning) {
+        clearInterval(breathTimer);
+        breathRunning = false;
+        breathSec = 60;
+        btn.textContent = 'Başlat';
+        phase.textContent = 'Hazır';
+        timerEl.textContent = '60s';
+        circle.className = 'breath-circle w-28 h-28 rounded-full bg-brand-500 text-white flex flex-col items-center justify-center font-bold shadow-md my-3';
+        return;
+      }
+      breathRunning = true;
+      btn.textContent = 'Durdur';
+      breathTimer = setInterval(() => {
+        breathSec--;
+        const mod = (60 - breathSec) % 12;
+        if (mod < 4) {
+          phase.textContent = 'Nefes Al';
+          circle.className = 'breath-circle breath-inhale w-28 h-28 rounded-full text-white flex flex-col items-center justify-center font-bold shadow-md my-3';
+        } else if (mod < 8) {
+          phase.textContent = 'Tut';
+          circle.className = 'breath-circle breath-hold w-28 h-28 rounded-full text-white flex flex-col items-center justify-center font-bold shadow-md my-3';
+        } else {
+          phase.textContent = 'Ver';
+          circle.className = 'breath-circle breath-exhale w-28 h-28 rounded-full text-white flex flex-col items-center justify-center font-bold shadow-md my-3';
+        }
+        timerEl.textContent = breathSec + 's';
+        if (breathSec <= 0) toggleBreath();
+      }, 1000);
+    }
+
+    function setMood(mood) {
+      state.mood = mood;
+      saveState();
+      renderHome();
+    }
+
+    function renderHome() {
+      const initials = state.profile.name.split(' ').map(w => w[0] || '').join('').slice(0, 2).toUpperCase() || 'ÖA';
+      document.getElementById('home-avatar').textContent = initials;
+      document.getElementById('home-student-name').textContent = state.profile.name;
+      document.getElementById('home-exam-badge').textContent = state.profile.exam + ' Adayı';
+
+      const totalT = state.dailyTasks.length;
+      const doneT = state.dailyTasks.filter(t => t.done).length;
+      const pct = totalT ? Math.round((doneT / totalT) * 100) : 0;
+      document.getElementById('home-progress-pct').textContent = pct + '%';
+      document.getElementById('home-progress-bar').style.width = pct + '%';
+      document.getElementById('stat-tasks').textContent = doneT + ' / ' + totalT;
+      const pendingReviews = state.dailyTasks.filter(t => t.type === 'Tekrar' && !t.done).length;
+      document.getElementById('stat-reviews').textContent = String(pendingReviews);
+      document.getElementById('stat-sessions').textContent = pct + '% · ' + Math.max(0, 4 - state.pomodoroHistory.filter(p => p.period === 'today').length) + ' Seans';
+
+      document.querySelectorAll('.mood-btn').forEach(b => {
+        const active = b.textContent.includes(state.mood);
+        b.classList.toggle('border-brand-600', active);
+        b.classList.toggle('bg-brand-50', active);
+      });
+      document.getElementById('mood-status').textContent = 'Seçili ruh hali: ' + state.mood;
+
+      document.getElementById('home-today-plan').innerHTML = state.dailyTasks.slice(0, 4).map(t =>
+        '<div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border">' +
+        '<span>' + escapeHtml(t.title) + '</span>' +
+        '<span class="text-xs px-2 py-0.5 rounded-full ' + (t.type === 'Tekrar' ? 'bg-purple-100 text-purple-700' : 'bg-brand-100 text-brand-700') + '">' + escapeHtml(t.type) + '</span>' +
+        '</div>'
+      ).join('');
+
+      document.getElementById('home-tasks-list').innerHTML = state.dailyTasks.map(t =>
+        '<label class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 cursor-pointer text-sm">' +
+        '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTask(' + t.id + ')" class="rounded text-brand-600" />' +
+        '<span class="' + (t.done ? 'line-through text-slate-400' : '') + '">' + escapeHtml(t.title) + '</span>' +
+        '</label>'
+      ).join('');
+
+      document.getElementById('coach-notes-list').innerHTML = state.coachNotes.map(n =>
+        '<div class="p-3 rounded-xl bg-slate-50 border"><div class="text-xs text-slate-400 mb-1">' + escapeHtml(n.date) + '</div><div>' + escapeHtml(n.text) + '</div></div>'
+      ).join('');
+    }
+
+    function toggleTask(id) {
+      const t = state.dailyTasks.find(x => x.id === id);
+      if (t) { t.done = !t.done; saveState(); renderAll(); }
+    }
+
+    // 2. PROGRAM
+    function renderProgram() {
+      document.getElementById('daily-strip').innerHTML = DAYS.map((d, idx) =>
+        '<button onclick="selectDay(' + idx + ')" class="py-2 rounded-xl text-xs font-bold border ' + (state.selectedDay === idx ? 'bg-brand-600 text-white border-brand-600' : 'bg-slate-50 text-slate-600') + '">' + escapeHtml(d) + '</button>'
+      ).join('');
+
+      const dayTasks = state.dailyTasks.filter(t => t.day === state.selectedDay);
+      document.getElementById('daily-tasks-list').innerHTML = dayTasks.length ? dayTasks.map(t =>
+        '<div class="flex items-center justify-between p-3 rounded-xl border">' +
+        '<label class="flex items-center gap-2.5 cursor-pointer text-sm"><input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTask(' + t.id + ')" /><span class="' + (t.done ? 'line-through text-slate-400' : '') + '">' + escapeHtml(t.title) + '</span></label>' +
+        '<span class="text-xs text-slate-400">' + escapeHtml(t.type) + '</span>' +
+        '</div>'
+      ).join('') : '<div class="text-sm text-slate-400 py-4 text-center">Bu gün için görev yok.</div>';
+
+      document.getElementById('weekly-grid').innerHTML = DAYS.map((d, idx) => {
+        const items = state.dailyTasks.filter(t => t.day === idx);
+        return '<div class="bg-slate-50 border rounded-xl p-3 space-y-2"><div class="font-bold text-xs text-brand-700">' + escapeHtml(d) + '</div>' +
+          (items.length ? items.map(t => '<div class="text-xs p-2 rounded-lg bg-white border ' + (t.done ? 'line-through text-slate-400' : '') + '">' + escapeHtml(t.title) + '</div>').join('') : '<div class="text-xs text-slate-400">Boş</div>') +
+          '</div>';
+      }).join('');
+
+      document.getElementById('meetings-list').innerHTML = state.meetings.map(m =>
+        '<div class="flex flex-wrap items-center justify-between gap-2 p-4 rounded-xl border bg-slate-50">' +
+        '<div><div class="font-bold text-sm">' + escapeHtml(m.title) + '</div><div class="text-xs text-slate-500">' + escapeHtml(m.date) + ' · ' + escapeHtml(m.coach) + '</div></div>' +
+        '<span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">' + escapeHtml(m.status) + '</span>' +
+        '</div>'
+      ).join('');
+    }
+
+    function selectDay(idx) { state.selectedDay = idx; saveState(); renderProgram(); }
+    function addDailyTask(e) {
+      e.preventDefault();
+      const inp = document.getElementById('new-daily-task');
+      if (!inp.value.trim()) return;
+      state.dailyTasks.push({ id: Date.now(), day: state.selectedDay, title: inp.value.trim(), type: 'Günlük Görev', done: false });
+      inp.value = '';
+      saveState(); renderAll();
+    }
+
+    function toggleWeeklyFullscreen() {
+      document.getElementById('tab-program-weekly').classList.toggle('fullscreen-weekly');
+    }
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') document.getElementById('tab-program-weekly').classList.remove('fullscreen-weekly');
+    });
+
+    // POMODORO
+    let pomoTotalSec = 25 * 60, pomoRemainSec = 25 * 60, pomoInterval = null, pomoFilter = 'today';
+    function updatePomoUI() {
+      const m = String(Math.floor(pomoRemainSec / 60)).padStart(2, '0');
+      const s = String(pomoRemainSec % 60).padStart(2, '0');
+      document.getElementById('pomo-display').textContent = m + ':' + s;
+      const circ = 339.29;
+      const ratio = pomoTotalSec ? (1 - pomoRemainSec / pomoTotalSec) : 0;
+      document.getElementById('pomo-ring').style.strokeDashoffset = String(circ * ratio);
+    }
+    function setPomoMinutes(min) {
+      if (pomoInterval) togglePomodoro();
+      pomoTotalSec = min * 60; pomoRemainSec = pomoTotalSec;
+      document.getElementById('pomo-custom-wrap').classList.add('hidden');
+      updatePomoUI();
+    }
+    function setCustomPomo() { document.getElementById('pomo-custom-wrap').classList.toggle('hidden'); }
+    function applyCustomPomo() {
+      const val = Math.max(1, Math.min(180, Number(document.getElementById('pomo-custom-min').value) || 25));
+      setPomoMinutes(val);
+    }
+    function togglePomodoro() {
+      const btn = document.getElementById('pomo-start-btn');
+      if (pomoInterval) {
+        clearInterval(pomoInterval); pomoInterval = null; btn.textContent = 'Başlat'; return;
+      }
+      btn.textContent = 'Durdur';
+      pomoInterval = setInterval(() => {
+        if (pomoRemainSec > 0) { pomoRemainSec--; updatePomoUI(); }
+        else { clearInterval(pomoInterval); pomoInterval = null; btn.textContent = 'Başlat'; savePomodoroSession(); }
+      }, 1000);
+    }
+    function resetPomodoro() {
+      if (pomoInterval) togglePomodoro();
+      pomoRemainSec = pomoTotalSec; updatePomoUI();
+    }
+    function savePomodoroSession() {
+      const subject = document.getElementById('pomo-subject').value.trim() || 'Genel';
+      const topic = document.getElementById('pomo-topic').value.trim() || 'Çalışma';
+      const mins = Math.max(1, Math.round(pomoTotalSec / 60));
+      state.pomodoroHistory.unshift({ id: Date.now(), subject, topic, minutes: mins, period: 'today' });
+      saveState(); renderPomodoroHistory(); renderHome();
+    }
+    function setPomoFilter(f) {
+      pomoFilter = f;
+      document.getElementById('pomo-filter-today').classList.toggle('bg-white', f === 'today');
+      document.getElementById('pomo-filter-week').classList.toggle('bg-white', f === 'week');
+      renderPomodoroHistory();
+    }
+    function renderPomodoroHistory() {
+      const list = state.pomodoroHistory.filter(p => pomoFilter === 'week' || p.period === 'today');
+      document.getElementById('pomo-history').innerHTML = list.map(p =>
+        '<div class="flex justify-between p-2 rounded-lg bg-slate-50 border"><span>' + escapeHtml(p.subject) + ' · ' + escapeHtml(p.topic) + '</span><span class="font-bold">' + escapeHtml(p.minutes) + ' dk</span></div>'
+      ).join('');
+    }
+
+    // 3. ÇALIŞMA
+    function savePersonalNote() {
+      const val = document.getElementById('personal-study-note').value.slice(0, 2000);
+      state.personalNote = val;
+      document.getElementById('personal-note-count').textContent = val.length + ' / 2000';
+      saveState();
+    }
+    function renderTopics() {
+      const q = (document.getElementById('topic-search').value || '').toLowerCase();
+      const filtered = state.topics.filter(t => t.subject.toLowerCase().includes(q) || t.name.toLowerCase().includes(q));
+      document.getElementById('topics-list').innerHTML = filtered.map(t =>
+        '<label class="flex items-center justify-between p-3 rounded-xl border cursor-pointer hover:bg-slate-50">' +
+        '<span class="flex items-center gap-2.5"><input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTopic(' + t.id + ')" />' +
+        '<span class="text-sm font-medium ' + (t.done ? 'line-through text-slate-400' : '') + '">' + escapeHtml(t.name) + '</span></span>' +
+        '<span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">' + escapeHtml(t.subject) + '</span>' +
+        '</label>'
+      ).join('');
+    }
+    function toggleTopic(id) {
+      const t = state.topics.find(x => x.id === id);
+      if (t) { t.done = !t.done; saveState(); renderTopics(); }
+    }
+    function toggleAllTopics() {
+      const allDone = state.topics.every(t => t.done);
+      state.topics.forEach(t => { t.done = !allDone; });
+      saveState(); renderTopics();
+    }
+
+    function addResource(e) {
+      e.preventDefault();
+      state.resources.unshift({
+        id: Date.now(),
+        name: document.getElementById('res-name').value.trim(),
+        subject: document.getElementById('res-subject').value.trim(),
+        pages: Number(document.getElementById('res-pages').value) || 100,
+        donePages: 0,
+        completed: false
+      });
+      e.target.reset(); toggleForm('resource-form'); saveState(); renderResources();
+    }
+    function toggleResourceComplete(id) {
+      const r = state.resources.find(x => x.id === id);
+      if (r) { r.completed = !r.completed; r.donePages = r.completed ? r.pages : Math.floor(r.pages / 2); saveState(); renderResources(); }
+    }
+    function renderResources() {
+      const total = state.resources.length;
+      const done = state.resources.filter(r => r.completed).length;
+      const active = total - done;
+      const pages = state.resources.reduce((s, r) => s + (r.donePages || 0), 0);
+      document.getElementById('resource-counters').innerHTML = [
+        ['Toplam Kaynak', total], ['Devam Eden', active], ['Tamamlanan', done], ['Çözülen Sayfa', pages]
+      ].map(c => '<div class="p-3 rounded-xl bg-slate-50 border"><div class="text-xs text-slate-500">' + escapeHtml(c[0]) + '</div><div class="text-xl font-bold mt-0.5">' + escapeHtml(c[1]) + '</div></div>').join('');
+
+      document.getElementById('resources-list').innerHTML = state.resources.map(r =>
+        '<div class="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl border">' +
+        '<div><div class="font-semibold text-sm">' + escapeHtml(r.name) + '</div><div class="text-xs text-slate-500">' + escapeHtml(r.subject) + ' · ' + escapeHtml(r.donePages) + '/' + escapeHtml(r.pages) + ' sayfa</div></div>' +
+        '<button onclick="toggleResourceComplete(' + r.id + ')" class="px-3 py-1 rounded-lg text-xs font-semibold ' + (r.completed ? 'bg-emerald-100 text-emerald-700' : 'border') + '">' + (r.completed ? 'Tamamlandı' : 'Tamamla') + '</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    let qPeriod = 'daily';
+    function setQPeriod(p) {
+      qPeriod = p;
+      document.querySelectorAll('.q-period-btn').forEach(b => b.classList.toggle('bg-white', b.dataset.period === p));
+      renderQuestions();
+    }
+    function quickAddQuestion(subj) {
+      state.questions.unshift({ id: Date.now(), subject: subj, d: 20, y: 0, b: 0, period: 'daily' });
+      saveState(); renderQuestions();
+    }
+    function addQuestionLog(e) {
+      e.preventDefault();
+      state.questions.unshift({
+        id: Date.now(),
+        subject: document.getElementById('q-subject').value.trim(),
+        d: Number(document.getElementById('q-correct').value) || 0,
+        y: Number(document.getElementById('q-wrong').value) || 0,
+        b: Number(document.getElementById('q-blank').value) || 0,
+        period: 'daily'
+      });
+      e.target.reset(); saveState(); renderQuestions();
+    }
+    function renderQuestions() {
+      const list = state.questions.filter(q => qPeriod === 'all' || q.period === qPeriod);
+      const totD = list.reduce((s, q) => s + q.d, 0);
+      const totY = list.reduce((s, q) => s + q.y, 0);
+      const totNet = (totD - totY / 4).toFixed(2);
+      document.getElementById('questions-summary').textContent = 'Toplam Doğru: ' + totD + ' | Yanlış: ' + totY + ' | Net: ' + totNet;
+      document.getElementById('questions-list').innerHTML = list.map(q => {
+        const net = (q.d - q.y / 4).toFixed(2);
+        return '<div class="flex justify-between items-center p-3 rounded-xl border text-sm"><span><strong>' + escapeHtml(q.subject) + '</strong> (' + escapeHtml(q.d) + 'D / ' + escapeHtml(q.y) + 'Y / ' + escapeHtml(q.b) + 'B)</span><span class="font-bold text-brand-600">' + escapeHtml(net) + ' Net</span></div>';
+      }).join('');
+    }
+
+    // HIZLI OKUMA
+    let readerMode = 'rsvp', wpm = 300, rsvpInterval = null, rsvpWords = [], rsvpIdx = 0;
+    function setReaderMode(m) {
+      readerMode = m;
+      document.getElementById('mode-rsvp').className = 'px-3 py-1.5 rounded-xl text-xs font-semibold ' + (m === 'rsvp' ? 'bg-brand-600 text-white' : 'border');
+      document.getElementById('mode-tts').className = 'px-3 py-1.5 rounded-xl text-xs font-semibold ' + (m === 'tts' ? 'bg-brand-600 text-white' : 'border');
+      resetSpeedRead();
+    }
+    function setWpm(v) {
+      wpm = Math.max(80, Math.min(1000, Number(v) || 300));
+      document.getElementById('wpm-slider').value = String(wpm);
+      document.getElementById('wpm-label').textContent = wpm + ' WPM';
+    }
+    function loadPresetText(idx) {
+      document.getElementById('speed-text-input').value = PRESET_TEXTS[idx] || '';
+      resetSpeedRead();
+    }
+    function toggleSpeedRead() {
+      const text = (document.getElementById('speed-text-input').value || PRESET_TEXTS[0]).trim();
+      const btn = document.getElementById('speed-play-btn');
+      if (readerMode === 'tts') {
+        if ('speechSynthesis' in window) {
+          if (window.speechSynthesis.speaking) { window.speechSynthesis.cancel(); btn.textContent = 'Başlat'; return; }
+          const utt = new SpeechSynthesisUtterance(text);
+          utt.lang = 'tr-TR';
+          utt.rate = Math.max(0.5, Math.min(2.5, wpm / 200));
+          utt.onend = () => { btn.textContent = 'Başlat'; };
+          btn.textContent = 'Durdur';
+          window.speechSynthesis.speak(utt);
+        }
+        return;
+      }
+      if (rsvpInterval) { clearInterval(rsvpInterval); rsvpInterval = null; btn.textContent = 'Başlat'; return; }
+      rsvpWords = text.split(/\s+/).filter(Boolean);
+      if (!rsvpWords.length) return;
+      btn.textContent = 'Durdur';
+      const ms = Math.round(60000 / wpm);
+      rsvpInterval = setInterval(() => {
+        if (rsvpIdx >= rsvpWords.length) { resetSpeedRead(); return; }
+        document.getElementById('rsvp-word').textContent = rsvpWords[rsvpIdx];
+        document.getElementById('rsvp-progress').textContent = (rsvpIdx + 1) + ' / ' + rsvpWords.length + ' kelime';
+        rsvpIdx++;
+      }, ms);
+    }
+    function resetSpeedRead() {
+      if (rsvpInterval) { clearInterval(rsvpInterval); rsvpInterval = null; }
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      rsvpIdx = 0;
+      document.getElementById('speed-play-btn').textContent = 'Başlat';
+      document.getElementById('rsvp-word').textContent = 'Hazır';
+      document.getElementById('rsvp-progress').textContent = '0 / 0 kelime';
+    }
+
+    // 4. DENEME & ANALİZ
+    let branchSubj = 'Tümü', chartType = 'bar', mistakeFilter = 'all';
+    function addBranchExam(e) {
+      e.preventDefault();
+      state.branchExams.unshift({
+        id: Date.now(),
+        subject: document.getElementById('be-subject').value,
+        name: document.getElementById('be-name').value.trim(),
+        d: Number(document.getElementById('be-d').value) || 0,
+        y: Number(document.getElementById('be-y').value) || 0
+      });
+      e.target.reset(); toggleForm('branch-form'); saveState(); renderExams();
+    }
+    function addGeneralExam(e) {
+      e.preventDefault();
+      state.generalExams.push({
+        id: Date.now(),
+        name: document.getElementById('ge-name').value.trim(),
+        net: Number(document.getElementById('ge-net').value) || 0,
+        date: document.getElementById('ge-date').value
+      });
+      e.target.reset(); toggleForm('general-form'); saveState(); renderExams();
+    }
+    function setChartType(t) { chartType = t; renderExams(); }
+    function addSchoolGrade(e) {
+      e.preventDefault();
+      state.schoolGrades.push({
+        id: Date.now(),
+        subject: document.getElementById('sg-subject').value.trim(),
+        written: Number(document.getElementById('sg-written').value) || 0,
+        oral: Number(document.getElementById('sg-oral').value) || 0,
+        project: Number(document.getElementById('sg-project').value) || 0
+      });
+      e.target.reset(); saveState(); renderExams();
+    }
+    function addMistake(e) {
+      e.preventDefault();
+      state.mistakes.unshift({
+        id: Date.now(),
+        subject: document.getElementById('m-subject').value.trim(),
+        topic: document.getElementById('m-topic').value.trim(),
+        note: document.getElementById('m-note').value.trim(),
+        period: 'today',
+        solved: false
+      });
+      e.target.reset(); toggleForm('mistake-form'); saveState(); renderExams();
+    }
+    function setMistakeFilter(f) { mistakeFilter = f; renderExams(); }
+    function toggleMistakeSolved(id) {
+      const m = state.mistakes.find(x => x.id === id);
+      if (m) { m.solved = !m.solved; saveState(); renderExams(); }
+    }
+    function renderExams() {
+      const subjects = ['Tümü', 'Türkçe', 'Matematik', 'Fen', 'Sosyal'];
+      document.getElementById('branch-subject-tabs').innerHTML = subjects.map(s =>
+        '<button onclick="branchSubj=\'' + s + '\';renderExams()" class="px-3 py-1 rounded-lg text-xs font-semibold ' + (branchSubj === s ? 'bg-brand-600 text-white' : 'border') + '">' + escapeHtml(s) + '</button>'
+      ).join('');
+      const bList = state.branchExams.filter(b => branchSubj === 'Tümü' || b.subject === branchSubj);
+      document.getElementById('branch-exams-list').innerHTML = bList.map(b => {
+        const net = (b.d - b.y / 4).toFixed(2);
+        return '<div class="flex justify-between p-3 rounded-xl border text-sm"><span><strong>' + escapeHtml(b.name) + '</strong> (' + escapeHtml(b.subject) + ')</span><span class="font-bold text-brand-600">' + escapeHtml(net) + ' Net</span></div>';
+      }).join('');
+
+      const box = document.getElementById('general-chart-box');
+      if (chartType === 'bar') {
+        box.innerHTML = '<div class="flex items-end gap-4 h-36 pt-4">' + state.generalExams.map(g => {
+          const h = Math.max(12, Math.min(100, Math.round((g.net / 120) * 100)));
+          return '<div class="flex-1 flex flex-col items-center gap-1"><span class="text-xs font-bold">' + escapeHtml(g.net) + '</span><div class="w-full max-w-[48px] bg-brand-600 rounded-t-lg" style="height:' + h + '%"></div><span class="text-[11px] text-slate-500">' + escapeHtml(g.name) + '</span></div>';
+        }).join('') + '</div>';
+      } else if (chartType === 'line') {
+        const pts = state.generalExams.map((g, i) => (30 + i * 80) + ',' + (120 - Math.min(100, g.net))).join(' ');
+        box.innerHTML = '<svg viewBox="0 0 320 130" class="w-full h-36"><polyline fill="none" stroke="#4f46e5" stroke-width="3" points="' + escapeHtml(pts) + '" /></svg>';
+      } else {
+        const avg = state.generalExams.length ? Math.round(state.generalExams.reduce((s, g) => s + g.net, 0) / state.generalExams.length) : 0;
+        const pct = Math.min(100, Math.round((avg / 120) * 100));
+        box.innerHTML = '<div class="flex items-center justify-center gap-6 py-4"><div class="w-28 h-28 rounded-full flex items-center justify-center font-bold text-sm" style="background:conic-gradient(#4f46e5 ' + pct + '%, #e2e8f0 0)">' + escapeHtml(pct) + '%</div><div class="text-sm">Ortalama Net: <strong>' + escapeHtml(avg) + ' / 120</strong></div></div>';
+      }
+      document.getElementById('general-exams-list').innerHTML = state.generalExams.map(g =>
+        '<div class="flex justify-between p-3 rounded-xl border text-sm"><span><strong>' + escapeHtml(g.name) + '</strong> · ' + escapeHtml(g.date) + '</span><span class="font-bold">' + escapeHtml(g.net) + ' Net</span></div>'
+      ).join('');
+
+      const avgGrade = state.schoolGrades.length ? (state.schoolGrades.reduce((s, g) => s + (g.written + g.oral + g.project) / 3, 0) / state.schoolGrades.length).toFixed(2) : '--';
+      document.getElementById('karne-estimate').textContent = 'Karne Tahmini: ' + avgGrade;
+      document.getElementById('school-grades-list').innerHTML = state.schoolGrades.map(g => {
+        const avg = ((g.written + g.oral + g.project) / 3).toFixed(1);
+        return '<div class="flex justify-between p-3 rounded-xl border text-sm"><span><strong>' + escapeHtml(g.subject) + '</strong> (Y:' + escapeHtml(g.written) + ' S:' + escapeHtml(g.oral) + ' P:' + escapeHtml(g.project) + ')</span><span class="font-bold text-emerald-700">Ort: ' + escapeHtml(avg) + '</span></div>';
+      }).join('');
+
+      const mTot = state.mistakes.length;
+      const mToday = state.mistakes.filter(m => m.period === 'today').length;
+      const mWeek = state.mistakes.filter(m => m.period === 'today' || m.period === 'week').length;
+      const mSolved = state.mistakes.filter(m => m.solved).length;
+      document.getElementById('mistakes-summary-cards').innerHTML = [
+        ['Toplam Yanlış', mTot], ['Bugün', mToday], ['Bu Hafta', mWeek], ['Çözüldü', mSolved]
+      ].map(c => '<div class="p-3 rounded-xl bg-slate-50 border"><div class="text-xs text-slate-500">' + escapeHtml(c[0]) + '</div><div class="text-xl font-bold">' + escapeHtml(c[1]) + '</div></div>').join('');
+
+      const mList = state.mistakes.filter(m => mistakeFilter === 'all' || (mistakeFilter === 'week' && (m.period === 'today' || m.period === 'week')) || m.period === mistakeFilter);
+      document.getElementById('mistakes-list').innerHTML = mList.map(m =>
+        '<div class="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl border text-sm"><div><strong>' + escapeHtml(m.subject) + ' · ' + escapeHtml(m.topic) + '</strong><div class="text-xs text-slate-500">' + escapeHtml(m.note) + '</div></div>' +
+        '<button onclick="toggleMistakeSolved(' + m.id + ')" class="px-3 py-1 rounded-lg text-xs font-semibold ' + (m.solved ? 'bg-emerald-100 text-emerald-700' : 'border') + '">' + (m.solved ? 'Çözüldü' : 'Çözüldü İşaretle') + '</button></div>'
+      ).join('');
+    }
+
+    // 5. HEDEF & KİŞİSEL
+    let goalTab = 'active';
+    const GOAL_SUGGESTIONS = ['Haftada 2 Genel Deneme Çöz', 'Yanlış Defterini Pazar Tekrar Et', 'Günde 20 Dk Hızlı Okuma Yap'];
+    const GOAL_TEMPLATES = ['Günde 100 Soru', '3 Pomodoro Odak', '1 Konu Bitir', 'Paragraf 30 Soru', 'Yanlış Tekrarı', 'Deneme Analizi'];
+    function setGoalTab(t) {
+      goalTab = t;
+      document.getElementById('goal-tab-active').className = 'px-3 py-1 rounded-lg text-xs font-semibold ' + (t === 'active' ? 'bg-brand-600 text-white' : 'border');
+      document.getElementById('goal-tab-past').className = 'px-3 py-1 rounded-lg text-xs font-semibold ' + (t === 'past' ? 'bg-brand-600 text-white' : 'border');
+      renderGoals();
+    }
+    function addGoal(e) {
+      e.preventDefault();
+      state.goals.unshift({ id: Date.now(), title: document.getElementById('goal-title').value.trim(), target: document.getElementById('goal-target').value.trim(), done: false });
+      e.target.reset(); toggleForm('goal-form'); saveState(); renderGoals();
+    }
+    function quickAddGoal(title) {
+      state.goals.unshift({ id: Date.now(), title: title, target: 'Hızlı Şablon', done: false });
+      saveState(); renderGoals();
+    }
+    function toggleGoalDone(id) {
+      const g = state.goals.find(x => x.id === id);
+      if (g) { g.done = !g.done; saveState(); renderGoals(); }
+    }
+    function renderGoals() {
+      const tot = state.goals.length, done = state.goals.filter(g => g.done).length, act = tot - done;
+      const rate = tot ? Math.round((done / tot) * 100) : 0;
+      document.getElementById('goals-status-cards').innerHTML = [
+        ['Aktif Hedef', act], ['Tamamlanan', done], ['Başarı Oranı', rate + '%']
+      ].map(c => '<div class="p-3 rounded-xl bg-brand-50 border border-brand-100"><div class="text-xs text-brand-700">' + escapeHtml(c[0]) + '</div><div class="text-xl font-bold text-brand-700">' + escapeHtml(c[1]) + '</div></div>').join('');
+      document.getElementById('goals-counters').innerHTML = [
+        ['Toplam Hedef', tot], ['Haftalık Biten', done], ['Seri Gün', '5'], ['Odak Puanı', done * 25]
+      ].map(c => '<div class="p-3 rounded-xl bg-slate-50 border"><div class="text-xs text-slate-500">' + escapeHtml(c[0]) + '</div><div class="text-lg font-bold">' + escapeHtml(c[1]) + '</div></div>').join('');
+      document.getElementById('goals-suggestions').innerHTML = GOAL_SUGGESTIONS.map(s =>
+        '<div class="p-3 rounded-xl border bg-slate-50 flex flex-col justify-between gap-2"><span class="text-xs font-medium">' + escapeHtml(s) + '</span><button onclick="quickAddGoal(\'' + escapeHtml(s) + '\')" class="self-start text-xs text-brand-600 font-semibold">+ Ekle</button></div>'
+      ).join('');
+      document.getElementById('goals-templates').innerHTML = GOAL_TEMPLATES.map(t =>
+        '<button onclick="quickAddGoal(\'' + escapeHtml(t) + '\')" class="p-2 rounded-xl border text-xs font-semibold hover:bg-slate-50 text-left">+ ' + escapeHtml(t) + '</button>'
+      ).join('');
+      const list = state.goals.filter(g => goalTab === 'active' ? !g.done : g.done);
+      document.getElementById('goals-list').innerHTML = list.map(g =>
+        '<div class="flex justify-between items-center p-3 rounded-xl border text-sm"><span><strong>' + escapeHtml(g.title) + '</strong> · ' + escapeHtml(g.target) + '</span><button onclick="toggleGoalDone(' + g.id + ')" class="px-3 py-1 rounded-lg border text-xs font-semibold">' + (g.done ? 'Aktife Al' : 'Tamamla') + '</button></div>'
+      ).join('');
+    }
+
+    // OBP
+    function syncDiploma(val) {
+      const v = Math.max(50, Math.min(100, Number(val) || 50));
+      state.diplomaScore = v;
+      document.getElementById('obp-diploma-range').value = String(v);
+      document.getElementById('obp-diploma-input').value = String(v);
+      document.getElementById('obp-diploma-val').textContent = String(v);
+      saveState(); calcOBP();
+    }
+    function calcOBP() {
+      const dip = Number(document.getElementById('obp-diploma-input').value) || 85;
+      const raw = Number(document.getElementById('obp-raw-score').value) || 0;
+      const obp = dip * 5;
+      const contrib = obp * 0.12;
+      document.getElementById('obp-score').textContent = obp.toFixed(2);
+      document.getElementById('obp-contrib').textContent = '+' + contrib.toFixed(2);
+      document.getElementById('obp-total').textContent = (raw + contrib).toFixed(2);
+    }
+    function estimateDiplomaFromGrades() {
+      if (!state.schoolGrades.length) return;
+      const avg = state.schoolGrades.reduce((s, g) => s + (g.written + g.oral + g.project) / 3, 0) / state.schoolGrades.length;
+      syncDiploma(avg.toFixed(1));
+    }
+
+    // MESAJLAR
+    let pendingAttachment = '';
+    function previewChatFile() {
+      const inp = document.getElementById('chat-file');
+      const file = inp.files && inp.files[0];
+      pendingAttachment = file ? file.name : '';
+      document.getElementById('chat-file-preview').textContent = pendingAttachment ? 'Ekli dosya: ' + pendingAttachment : '';
+    }
+    function sendMessage(e) {
+      e.preventDefault();
+      const inp = document.getElementById('chat-input');
+      const txt = inp.value.trim();
+      if (!txt && !pendingAttachment) return;
+      const full = txt + (pendingAttachment ? ' [📎 ' + pendingAttachment + ']' : '');
+      state.messages.push({ id: Date.now(), sender: 'student', text: full, time: new Date().toTimeString().slice(0, 5) });
+      inp.value = ''; pendingAttachment = '';
+      document.getElementById('chat-file').value = '';
+      document.getElementById('chat-file-preview').textContent = '';
+      saveState(); renderMessages();
+    }
+    function renderMessages() {
+      document.getElementById('chat-messages').innerHTML = state.messages.map(m =>
+        '<div class="flex ' + (m.sender === 'student' ? 'justify-end' : 'justify-start') + '">' +
+        '<div class="max-w-xs md:max-w-md px-3.5 py-2 rounded-2xl text-sm ' + (m.sender === 'student' ? 'bg-brand-600 text-white' : 'bg-white border') + '">' +
+        '<div>' + escapeHtml(m.text) + '</div><div class="text-[10px] opacity-75 mt-1 text-right">' + escapeHtml(m.time) + '</div></div></div>'
+      ).join('');
+    }
+
+    // AYARLAR (Şifre ve e-posta localStorage'a yazılmaz)
+    function saveProfile(e) {
+      e.preventDefault();
+      state.profile.name = document.getElementById('set-name').value.trim() || 'Öğrenci Adayı';
+      state.profile.exam = document.getElementById('set-exam').value;
+      state.profile.grade = document.getElementById('set-grade').value.trim();
+      saveState(); renderHome(); updateCountdown();
+      document.getElementById('profile-msg').textContent = 'Profil bilgileri güncellendi.';
+    }
+    function changePassword(e) {
+      e.preventDefault();
+      const nw = document.getElementById('pw-new').value;
+      const cf = document.getElementById('pw-confirm').value;
+      const msg = document.getElementById('pw-msg');
+      if (nw !== cf) {
+        msg.className = 'text-xs text-rose-600';
+        msg.textContent = 'Yeni şifreler eşleşmiyor.';
+        return;
+      }
+      e.target.reset();
+      msg.className = 'text-xs text-emerald-600';
+      msg.textContent = 'Şifre güvenlik doğrulaması başarılı (yerel depolamaya kaydedilmez).';
+    }
+
+    function renderAll() {
+      renderHome(); renderProgram(); renderPomodoroHistory(); renderTopics();
+      renderResources(); renderQuestions(); renderExams(); renderGoals(); renderMessages();
+    }
+
+    (function init() {
+      document.getElementById('personal-study-note').value = state.personalNote || '';
+      document.getElementById('personal-note-count').textContent = (state.personalNote || '').length + ' / 2000';
+      document.getElementById('set-name').value = state.profile.name;
+      document.getElementById('set-exam').value = state.profile.exam;
+      document.getElementById('set-grade').value = state.profile.grade;
+      syncDiploma(state.diplomaScore || 85);
+      updateCountdown();
+      setInterval(updateCountdown, 60000);
+      updatePomoUI();
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
+  <main class="flex-1 p-4 md:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6">
