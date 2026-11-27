@@ -1,4 +1,4 @@
-# 🚀 Adimplan — EdTech Coaching SaaS (v1.4.0)
+# 🚀 Adimplan — EdTech Coaching SaaS (v1.8.0)
 
 [![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
@@ -99,6 +99,7 @@ Run all 5 SQL migrations in order (`001` → `005`) in your Supabase SQL Editor 
 3. `supabase/migrations/003_workspace_snapshots.sql`
 4. `supabase/migrations/004_security_hardening.sql`
 5. `supabase/migrations/005_role_based_access.sql`
+6. `supabase/migrations/006_full_panels_rls.sql`
 
 **API authentication:** set `SUPABASE_URL` and `SUPABASE_ANON_KEY` on the API server. The parent e-mail and optical CSV import endpoints then require a signed-in Supabase user with an `owner` or `coach` row in `public.memberships`. Create the first tenant and its owner membership in the SQL Editor. Without these variables the API runs in demo mode and refuses to send real e-mail.
 
@@ -106,6 +107,11 @@ Run all 5 SQL migrations in order (`001` → `005`) in your Supabase SQL Editor 
 ```bash
 pip install -r backend/requirements.txt
 uvicorn backend.main:app --reload
+```
+
+Or run locally with Docker Compose:
+```bash
+docker compose up --build
 ```
 
 ### 5. Run Tests
@@ -117,6 +123,9 @@ pytest backend/tests
 pip install playwright && playwright install chromium
 pytest tests/test_frontend_e2e.py
 ```
+
+### 6. API Endpoints (`/api/v1`)
+Versioned v1.7+ and v1.8+ backend routes are served under `/api/v1` (via `v17_routes.py`), providing read and capabilities endpoints for the coach and student panels.
 
 ---
 
