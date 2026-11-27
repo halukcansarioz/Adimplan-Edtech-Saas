@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AdımPlan — Optik Okuyucu &amp; Anlık Puanlama</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .bubble-btn { transition: all 0.12s ease; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="./index.html" class="text-xl font-extrabold tracking-tight text-indigo-600">AdımPlan</a>
+        <span class="text-slate-300">|</span>
+        <h1 class="text-sm sm:text-base font-semibold text-slate-700">Optik Okuyucu &amp; Anlık Puanlama</h1>
+      </div>
+      <div class="flex items-center gap-3 text-xs sm:text-sm">
+        <a href="./parent-report.html" class="text-slate-600 hover:text-indigo-600 font-medium">Veli Raporu</a>
+        <a href="./index.html" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium">Ana Sayfa</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <!-- Adım 1: Cevap Anahtarı -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <span class="inline-block text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">Adım 1</span>
+          <h2 class="text-lg font-bold text-slate-900 mt-1">Cevap Anahtarı Tanımlama</h2>
+          <p class="text-sm text-slate-500">Örnek 20 soruluk TYT anahtarını yükleyin, hızlı giriş yapın veya .csv dosyası seçin.</p>
+        </div>
+        <button id="loadSampleKeyBtn" type="button" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-sm">
+          Örnek 20 Soruluk TYT Anahtarı Yükle
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="space-y-2">
+          <label for="quickKeyInput" class="block text-xs font-semibold text-slate-600 uppercase tracking-wide">Hızlı Giriş (A,B,C,D,E)</label>
+          <div class="flex gap-2">
+            <input id="quickKeyInput" type="text" placeholder="Örn: A,C,B,D,E,A,B,C,D,E..." class="flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <button id="applyQuickKeyBtn" type="button" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold">Uygula</button>
+          </div>
+        </div>
+        <div class="space-y-2">
+          <label for="keyCsvInput" class="block text-xs font-semibold text-slate-600 uppercase tracking-wide">Cevap Anahtarı .CSV Yükle</label>
+          <input id="keyCsvInput" type="file" accept=".csv" class="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+        </div>
+      </div>
+
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Aktif Cevap Anahtarı</span>
+          <span id="keyCountBadge" class="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full">0 Soru</span>
+        </div>
+        <div id="keyPreview" class="flex flex-wrap gap-1.5"></div>
+      </div>
+    </section>
+
+    <!-- Adım 2: Etkileşimli Optik Baloncuk Izgarası & Toplu CSV İçe Aktarım -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <span class="inline-block text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">Adım 2</span>
+          <h2 class="text-lg font-bold text-slate-900 mt-1">Etkileşimli Optik Baloncuk Izgarası &amp; Toplu CSV İçe Aktarım</h2>
+          <p class="text-sm text-slate-500">Öğrenci seçip optik baloncukları işaretleyin veya çoklu öğrenci CSV dosyası içe aktarın.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="loadSampleStudentsBtn" type="button" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-semibold">
+            Örnek 3 Öğrenciyi Sıfırla
+          </button>
+          <label class="cursor-pointer px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold">
+            Toplu Öğrenci .CSV İçe Aktar
+            <input id="studentsCsvInput" type="file" accept=".csv" class="hidden" />
+          </label>
+        </div>
+      </div>
+
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+        <div id="studentTabs" class="flex flex-wrap gap-2"></div>
+        <div class="flex gap-2">
+          <input id="newStudentName" type="text" placeholder="Yeni öğrenci adı..." class="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <button id="addStudentBtn" type="button" class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold">Ekle</button>
+        </div>
+      </div>
+
+      <div id="bubbleGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+    </section>
+
+    <!-- Adım 3: Anlık Puanlama & Analiz -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <span class="inline-block text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">Adım 3</span>
+          <h2 class="text-lg font-bold text-slate-900 mt-1">Anlık Puanlama &amp; Analiz</h2>
+          <p class="text-sm text-slate-500">Net hesaplama formülü: Doğru - (Yanlış × 0.25)</p>
+        </div>
+        <button id="downloadCsvBtn" type="button" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-sm">
+          CSV İndir (UTF-8)
+        </button>
+      </div>
+
+      <div class="overflow-x-auto rounded-xl border border-slate-200">
+        <table id="resultsTable" class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase text-slate-600">
+              <th class="py-3 px-4">Öğrenci</th>
+              <th class="py-3 px-4 text-center">Doğru</th>
+              <th class="py-3 px-4 text-center">Yanlış</th>
+              <th class="py-3 px-4 text-center">Boş</th>
+              <th class="py-3 px-4 text-center">Net</th>
+              <th class="py-3 px-4 text-center">Başarı</th>
+              <th class="py-3 px-4 text-right">Veli Raporu</th>
+            </tr>
+          </thead>
+          <tbody id="resultsBody" class="divide-y divide-slate-100 text-sm"></tbody>
+        </table>
+      </div>
+
+      <div class="space-y-3">
+        <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wide">Soru Bazlı Başarı Yüzdeleri</h3>
+        <div id="questionStats" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const SAMPLE_KEY = [
+        "A", "C", "B", "D", "E", "B", "A", "D", "C", "E",
+        "D", "A", "E", "B", "C", "A", "D", "B", "E", "C"
+      ];
+
+      const SAMPLE_STUDENTS = [
+        {
+          name: "Ahmet Yılmaz",
+          answers: ["A", "C", "B", "D", "E", "B", "A", "C", "C", "E", "D", "A", "", "B", "C", "A", "D", "B", "E", "C"]
+        },
+        {
+          name: "Elif Demir",
+          answers: ["A", "C", "D", "D", "E", "B", "A", "D", "C", "A", "D", "A", "E", "B", "B", "A", "", "B", "E", "C"]
+        },
+        {
+          name: "Can Kaya",
+          answers: ["A", "B", "B", "D", "", "B", "C", "D", "C", "E", "D", "E", "E", "B", "C", "A", "D", "", "E", "A"]
+        }
+      ];
+
+      const CHOICES = ["A", "B", "C", "D", "E", ""];
+      let answerKey = SAMPLE_KEY.slice();
+      let students = SAMPLE_STUDENTS.map(function (s) {
+        return { name: s.name, answers: s.answers.slice() };
+      });
+      let activeStudentIndex = 0;
+
+      const quickKeyInput = document.getElementById("quickKeyInput");
+      const keyPreview = document.getElementById("keyPreview");
+      const keyCountBadge = document.getElementById("keyCountBadge");
+      const studentTabs = document.getElementById("studentTabs");
+      const bubbleGrid = document.getElementById("bubbleGrid");
+      const resultsBody = document.getElementById("resultsBody");
+      const questionStats = document.getElementById("questionStats");
+
+      function normalizeAnswer(val) {
+        const clean = String(val || "").trim().toUpperCase();
+        if (clean === "A" || clean === "B" || clean === "C" || clean === "D" || clean === "E") {
+          return clean;
+        }
+        return "";
+      }
+
+      function parseKeyString(raw) {
+        const parts = raw.indexOf(",") !== -1 || raw.indexOf(";") !== -1
+          ? raw.split(/[,;\s]+/)
+          : raw.replace(/\s+/g, "").split("");
+        const parsed = [];
+        for (let i = 0; i < parts.length; i++) {
+          const norm = normalizeAnswer(parts[i]);
+          if (norm) parsed.push(norm);
+        }
+        return parsed;
+      }
+
+      function computeScore(student) {
+        let correct = 0;
+        let wrong = 0;
+        let blank = 0;
+        for (let i = 0; i < answerKey.length; i++) {
+          const expected = answerKey[i];
+          const actual = normalizeAnswer(student.answers[i]);
+          if (!actual) {
+            blank++;
+          } else if (actual === expected) {
+            correct++;
+          } else {
+            wrong++;
+          }
+        }
+        const net = correct - wrong * 0.25;
+        const pct = answerKey.length > 0 ? Math.round((correct / answerKey.length) * 100) : 0;
+        return { correct: correct, wrong: wrong, blank: blank, net: net, pct: pct };
+      }
+
+      function renderKeyPreview() {
+        keyPreview.replaceChildren();
+        keyCountBadge.textContent = String(answerKey.length) + " Soru";
+        quickKeyInput.value = answerKey.join(",");
+        for (let i = 0; i < answerKey.length; i++) {
+          const chip = document.createElement("span");
+          chip.className = "inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold";
+          chip.textContent = String(i + 1) + ":" + answerKey[i];
+          keyPreview.appendChild(chip);
+        }
+      }
+
+      function renderStudentTabs() {
+        studentTabs.replaceChildren();
+        if (activeStudentIndex >= students.length) activeStudentIndex = 0;
+        for (let i = 0; i < students.length; i++) {
+          (function (idx) {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            const isActive = idx === activeStudentIndex;
+            btn.className = isActive
+              ? "px-3.5 py-1.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold shadow-sm"
+              : "px-3.5 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 text-sm font-medium";
+            btn.textContent = students[idx].name;
+            btn.addEventListener("click", function () {
+              activeStudentIndex = idx;
+              renderStudentTabs();
+              renderBubbleGrid();
+            });
+            studentTabs.appendChild(btn);
+          })(i);
+        }
+      }
+
+      function renderBubbleGrid() {
+        bubbleGrid.replaceChildren();
+        if (students.length === 0) return;
+        const current = students[activeStudentIndex];
+        for (let q = 0; q < answerKey.length; q++) {
+          (function (qIdx) {
+            const row = document.createElement("div");
+            row.className = "flex items-center justify-between gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50/60";
+
+            const labelWrap = document.createElement("div");
+            labelWrap.className = "flex items-center gap-2 min-w-[76px]";
+            const qNum = document.createElement("span");
+            qNum.className = "text-xs font-bold text-slate-700 w-7";
+            qNum.textContent = "S" + String(qIdx + 1);
+            const keyBadge = document.createElement("span");
+            keyBadge.className = "text-[11px] font-semibold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700";
+            keyBadge.textContent = answerKey[qIdx];
+            labelWrap.appendChild(qNum);
+            labelWrap.appendChild(keyBadge);
+            row.appendChild(labelWrap);
+
+            const btnsWrap = document.createElement("div");
+            btnsWrap.className = "flex items-center gap-1.5";
+            const currentAns = normalizeAnswer(current.answers[qIdx]);
+
+            for (let c = 0; c < CHOICES.length; c++) {
+              (function (choice) {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                const isSelected = currentAns === choice;
+                const isBlankBtn = choice === "";
+                if (isSelected) {
+                  btn.className = isBlankBtn
+                    ? "bubble-btn px-2.5 h-8 rounded-full text-xs font-bold bg-slate-700 text-white border border-slate-700"
+                    : "bubble-btn w-8 h-8 rounded-full text-xs font-bold bg-indigo-600 text-white border border-indigo-600 shadow-sm";
+                } else {
+                  btn.className = isBlankBtn
+                    ? "bubble-btn px-2.5 h-8 rounded-full text-xs font-semibold bg-white text-slate-600 border border-slate-300 hover:bg-slate-100"
+                    : "bubble-btn w-8 h-8 rounded-full text-xs font-semibold bg-white text-slate-700 border border-slate-300 hover:border-indigo-400";
+                }
+                btn.textContent = isBlankBtn ? "Boş" : choice;
+                btn.addEventListener("click", function () {
+                  current.answers[qIdx] = choice;
+                  renderBubbleGrid();
+                  renderResults();
+                });
+                btnsWrap.appendChild(btn);
+              })(CHOICES[c]);
+            }
+
+            row.appendChild(btnsWrap);
+            bubbleGrid.appendChild(row);
+          })(q);
+        }
+      }
+
+      function renderResults() {
+        resultsBody.replaceChildren();
+        for (let i = 0; i < students.length; i++) {
+          const s = students[i];
+          const res = computeScore(s);
+          const tr = document.createElement("tr");
+          tr.className = "hover:bg-slate-50";
+
+          const tdName = document.createElement("td");
+          tdName.className = "py-3 px-4 font-semibold text-slate-900";
+          tdName.textContent = s.name;
+
+          const tdCorrect = document.createElement("td");
+          tdCorrect.className = "py-3 px-4 text-center font-semibold text-emerald-700";
+          tdCorrect.textContent = String(res.correct);
+
+          const tdWrong = document.createElement("td");
+          tdWrong.className = "py-3 px-4 text-center font-semibold text-rose-600";
+          tdWrong.textContent = String(res.wrong);
+
+          const tdBlank = document.createElement("td");
+          tdBlank.className = "py-3 px-4 text-center text-slate-500";
+          tdBlank.textContent = String(res.blank);
+
+          const tdNet = document.createElement("td");
+          tdNet.className = "py-3 px-4 text-center font-extrabold text-indigo-700";
+          tdNet.textContent = res.net.toFixed(2);
+
+          const tdPct = document.createElement("td");
+          tdPct.className = "py-3 px-4 text-center text-slate-700 font-medium";
+          tdPct.textContent = "%" + String(res.pct);
+
+          const tdLink = document.createElement("td");
+          tdLink.className = "py-3 px-4 text-right";
+          const reportLink = document.createElement("a");
+          reportLink.href = "./parent-report.html?student=" + encodeURIComponent(s.name)
+            + "&correct=" + String(res.correct)
+            + "&wrong=" + String(res.wrong)
+            + "&blank=" + String(res.blank)
+            + "&net=" + encodeURIComponent(res.net.toFixed(2));
+          reportLink.className = "inline-flex items-center px-3 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold";
+          reportLink.textContent = "Veli Raporu";
+          tdLink.appendChild(reportLink);
+
+          tr.appendChild(tdName);
+          tr.appendChild(tdCorrect);
+          tr.appendChild(tdWrong);
+          tr.appendChild(tdBlank);
+          tr.appendChild(tdNet);
+          tr.appendChild(tdPct);
+          tr.appendChild(tdLink);
+          resultsBody.appendChild(tr);
+        }
+
+        questionStats.replaceChildren();
+        for (let q = 0; q < answerKey.length; q++) {
+          let hitCount = 0;
+          for (let sIdx = 0; sIdx < students.length; sIdx++) {
+            if (normalizeAnswer(students[sIdx].answers[q]) === answerKey[q]) {
+              hitCount++;
+            }
+          }
+          const qPct = students.length > 0 ? Math.round((hitCount / students.length) * 100) : 0;
+
+          const card = document.createElement("div");
+          card.className = "p-3 rounded-xl border border-slate-200 bg-slate-50/70 space-y-1.5";
+
+          const top = document.createElement("div");
+          top.className = "flex items-center justify-between text-xs";
+          const title = document.createElement("span");
+          title.className = "font-bold text-slate-700";
+          title.textContent = "Soru " + String(q + 1) + " (" + answerKey[q] + ")";
+          const val = document.createElement("span");
+          val.className = "font-semibold text-slate-600";
+          val.textContent = "%" + String(qPct);
+          top.appendChild(title);
+          top.appendChild(val);
+
+          const track = document.createElement("div");
+          track.className = "w-full h-2 rounded-full bg-slate-200 overflow-hidden";
+          const bar = document.createElement("div");
+          bar.className = qPct >= 70
+            ? "h-full bg-emerald-500 rounded-full"
+            : qPct >= 40
+              ? "h-full bg-amber-500 rounded-full"
+              : "h-full bg-rose-500 rounded-full";
+          bar.style.width = String(qPct) + "%";
+          track.appendChild(bar);
+
+          card.appendChild(top);
+          card.appendChild(track);
+          questionStats.appendChild(card);
+        }
+      }
+
+      function renderAll() {
+        renderKeyPreview();
+        renderStudentTabs();
+        renderBubbleGrid();
+        renderResults();
+      }
+
+      document.getElementById("loadSampleKeyBtn").addEventListener("click", function () {
+        answerKey = SAMPLE_KEY.slice();
+        renderAll();
+      });
+
+      document.getElementById("applyQuickKeyBtn").addEventListener("click", function () {
+        const parsed = parseKeyString(quickKeyInput.value);
+        if (parsed.length > 0) {
+          answerKey = parsed;
+          renderAll();
+        }
+      });
+
+      document.getElementById("keyCsvInput").addEventListener("change", function (e) {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        file.text().then(function (text) {
+          const lines = text.split(/\r?\n/).filter(function (l) { return l.trim().length > 0; });
+          const collected = [];
+          for (let i = 0; i < lines.length; i++) {
+            const cols = lines[i].split(/[,;]+/);
+            for (let j = 0; j < cols.length; j++) {
+              const norm = normalizeAnswer(cols[j]);
+              if (norm) collected.push(norm);
+            }
+          }
+          if (collected.length > 0) {
+            answerKey = collected;
+            renderAll();
+          }
+        });
+      });
+
+      document.getElementById("loadSampleStudentsBtn").addEventListener("click", function () {
+        students = SAMPLE_STUDENTS.map(function (s) {
+          return { name: s.name, answers: s.answers.slice() };
+        });
+        activeStudentIndex = 0;
+        renderAll();
+      });
+
+      document.getElementById("addStudentBtn").addEventListener("click", function () {
+        const input = document.getElementById("newStudentName");
+        const name = input.value.trim();
+        if (!name) return;
+        students.push({ name: name, answers: new Array(answerKey.length).fill("") });
+        activeStudentIndex = students.length - 1;
+        input.value = "";
+        renderAll();
+      });
+
+      document.getElementById("studentsCsvInput").addEventListener("change", function (e) {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        file.text().then(function (text) {
+          const lines = text.split(/\r?\n/).filter(function (l) { return l.trim().length > 0; });
+          const imported = [];
+          for (let i = 0; i < lines.length; i++) {
+            const sep = lines[i].indexOf(";") !== -1 ? ";" : ",";
+            const cols = lines[i].split(sep);
+            const first = (cols[0] || "").trim();
+            if (!first) continue;
+            if (i === 0 && /^(öğrenci|ogrenci|ad|name)/i.test(first)) continue;
+            const ans = [];
+            if (cols.length === 2 && cols[1].trim().length > 1) {
+              const chars = cols[1].trim().split("");
+              for (let k = 0; k < chars.length; k++) ans.push(normalizeAnswer(chars[k]));
+            } else {
+              for (let j = 1; j < cols.length; j++) ans.push(normalizeAnswer(cols[j]));
+            }
+            imported.push({ name: first, answers: ans });
+          }
+          if (imported.length > 0) {
+            students = imported;
+            activeStudentIndex = 0;
+            renderAll();
+          }
+        });
+      });
+
+      document.getElementById("downloadCsvBtn").addEventListener("click", function () {
+        const rows = [["Öğrenci Adı", "Doğru", "Yanlış", "Boş", "Net"]];
+        for (let i = 0; i < students.length; i++) {
+          const res = computeScore(students[i]);
+          rows.push([
+            '"' + students[i].name.replace(/"/g, '""') + '"',
+            String(res.correct),
+            String(res.wrong),
+            String(res.blank),
+            res.net.toFixed(2)
+          ]);
+        }
+        const csvText = rows.map(function (r) { return r.join(","); }).join("\n");
+        const blob = new Blob(["\uFEFF" + csvText], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "optik-okuyucu-sonuclar.csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      });
+
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
