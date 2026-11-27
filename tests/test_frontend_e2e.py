@@ -638,6 +638,7 @@ def test_new_v16_pages_load_without_errors(frontend_url):
         with p.chromium.launch() as browser:
             for page_name in pages:
                 context = browser.new_context()
+                context.add_init_script(SIGNED_IN)
                 page = context.new_page()
                 errors = []
                 page.on("pageerror", lambda err, errs=errors: errs.append(str(err)))
@@ -723,7 +724,7 @@ def test_program_page_shows_typed_html_as_text(frontend_url):
         with p.chromium.launch() as browser:
             context = browser.new_context()
             context.route(lambda u: not u.startswith("http://127.0.0.1"), lambda route: route.abort())
-            context.add_init_script("window.tailwind = {};")
+            context.add_init_script("window.tailwind = {};" + SIGNED_IN)
             page = context.new_page()
             page.goto(f"{frontend_url}/program.html")
             page.evaluate("openTaskModal(null, null)")
@@ -735,3 +736,59 @@ def test_program_page_shows_typed_html_as_text(frontend_url):
             assert page.evaluate("state.tasks.length") > before
             assert page.evaluate("window.__xss || 0") == 0
             assert payload in page.locator("body").inner_text()
+
+
+PANELS = [("student.html", "adimplan_student_state_v1"),
+          ("coach-panel.html", "adimplan_coach_panel_v1"),
+          ("program.html", "adimplan_program_v1")]
+
+
+def _offline_context(browser):
+    context = browser.new_context()
+    context.route(lambda u: not u.startswith("http://127.0.0.1"), lambda route: route.abort())
+    context.add_init_script("window.tailwind = {};")
+    return context
+
+
+@pytest.mark.parametrize("name,key", PANELS)
+def test_panel_requires_login_then_returns(frontend_url, name, key):
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            page = _offline_context(browser).new_page()
+            page.goto(f"{frontend_url}/{name}")
+            page.wait_for_url("**/login.html")
+            page.click("#demoBtn")
+            page.wait_for_url(f"**/{name}")
+
+
+@pytest.mark.parametrize("name,key", PANELS)
+def test_panel_demo_data_is_separate(frontend_url, name, key):
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            page = _offline_context(browser).new_page()
+            page.goto(f"{frontend_url}/login.html")
+            page.evaluate("([k]) => localStorage.setItem(k, 'REAL-DATA')", [key])
+            page.evaluate("sessionStorage.setItem('adimplan_next', 'https://evil.example/x')")
+            page.click("#demoBtn")
+            page.wait_for_url("**/app.html")
+            page.goto(f"{frontend_url}/{name}")
+            page.wait_for_load_state("load")
+            assert page.evaluate("([k]) => localStorage.getItem(k)", [key]) != "REAL-DATA"
+            page.evaluate("([k]) => localStorage.setItem(k, 'DEMO-WRITE')", [key])
+            page.goto(f"{frontend_url}/login.html")
+            assert page.evaluate("([k]) => localStorage.getItem(k)", [key]) == "REAL-DATA"
+
+
+@pytest.mark.parametrize("name,key", PANELS)
+def test_panel_idle_session_ends(frontend_url, name, key):
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            page = _offline_context(browser).new_page()
+            page.goto(f"{frontend_url}/login.html")
+            page.click("#demoBtn")
+            page.wait_for_url("**/app.html")
+            page.goto(f"{frontend_url}/{name}")
+            page.evaluate("localStorage.setItem('ivme_last_active', String(Date.now() - 31 * 60 * 1000))")
+            page.mouse.move(40, 40)
+            page.wait_for_url("**/login.html")
+            assert page.evaluate("localStorage.getItem('ivme_user')") is None
