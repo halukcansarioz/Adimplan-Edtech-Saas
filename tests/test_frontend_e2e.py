@@ -822,3 +822,21 @@ def test_auth_callback_login_error_banner_visible(frontend_url):
             assert alert.inner_text().strip() != ""
             assert page_errors == []
             
+
+def test_parent_report_renders_url_params(frontend_url):
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            page = _offline_context(browser).new_page()
+            page_errors = []
+            page.on("pageerror", lambda exc: page_errors.append(str(exc)))
+            resp = page.goto(
+                f"{frontend_url}/parent-report.html?student=Zeynep+Kaya&done=9&total=10&pomodoro=320&net=84.5",
+                wait_until="domcontentloaded",
+            )
+            assert resp is not None and resp.status == 200
+            assert page.locator("#reportStudent").is_visible()
+            assert page.locator("#reportStudent").inner_text() == "Zeynep Kaya"
+            assert page.locator("#kpiCompletion").is_visible()
+            assert "%90" in page.locator("#kpiCompletion").inner_text()
+            assert page_errors == []
+
