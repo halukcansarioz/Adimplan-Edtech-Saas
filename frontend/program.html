@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Adimplan — Haftalık Program</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<script>
+tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } } };
+</script>
+<style>
+body { font-family: 'Inter', sans-serif; }
+@page { size: A4 landscape; margin: 10mm; }
+@media print {
+.no-print { display: none !important; }
+body { background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+#print-preview-modal { position: static !important; background: transparent !important; padding: 0 !important; display: block !important; }
+#print-preview-sheet { box-shadow: none !important; max-width: 100% !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+}
+body.focus-mode #sidebar, body.focus-mode #trial-banner { display: none !important; }
+.drag-over { outline: 2px dashed #10b981; background-color: #ecfdf5 !important; }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col">
+<div id="trial-banner" class="no-print bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-between text-sm">
+<div class="flex items-center gap-2 text-amber-900 font-medium">
+<span class="inline-block w-2 h-2 rounded-full bg-amber-500"></span>
+<span>Deneme sürümü — 14 gün kaldı.</span>
+<span id="active-plan-badge" class="hidden ml-2 px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-800 font-semibold"></span>
+</div>
+<button onclick="openModal('plan-modal')" class="px-3 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition">Plan Seç</button>
+</div>
+<div class="flex flex-1 min-h-0">
+<aside id="sidebar" class="no-print w-64 bg-white border-r border-slate-200 flex flex-col justify-between transition-all duration-200 shrink-0">
+<div>
+<div class="p-4 border-b border-slate-100 flex items-center justify-between gap-2">
+<div class="flex items-center gap-2.5 overflow-hidden">
+<div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+</div>
+<div class="sidebar-label leading-tight">
+<div class="font-bold text-slate-900 text-base">Adimplan</div>
+<div class="text-[10px] font-bold tracking-widest text-slate-400">YÖNETİM</div>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<button onclick="showToast('Yeni bildirim yok')" title="Bildirimler" class="sidebar-label relative p-1.5 rounded-lg text-slate-500 hover:bg-slate-100">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+<span class="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full"></span>
+</button>
+<button onclick="toggleSidebar()" title="Menüyü Daralt/Genişlet" class="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+</button>
+</div>
+</div>
+<nav class="p-3 space-y-1 text-sm">
+<div class="sidebar-label px-3 pt-2 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">Program</div>
+<button onclick="showToast('Haftalık Program aktif')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-emerald-50 text-emerald-700 font-semibold">
+<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+<span class="sidebar-label">Haftalık Program</span>
+</button>
+<button onclick="showToast('Öğrenci Takibi modülü açılıyor...')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-medium">
+<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+<span class="sidebar-label">Öğrenci Takibi</span>
+</button>
+<button onclick="showToast('Analiz & Rapor modülü açılıyor...')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-medium">
+<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+<span class="sidebar-label">Analiz &amp; Rapor</span>
+</button>
+</nav>
+</div>
+<div class="p-3 border-t border-slate-100 flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs shrink-0">HC</div>
+<div class="sidebar-label overflow-hidden">
+<div class="text-sm font-semibold text-slate-800 truncate">Haluk Can Sarıöz</div>
+<div class="text-xs text-slate-500 truncate">Eğitim Koçu</div>
+</div>
+</div>
+</aside>
+<main class="flex-1 flex flex-col min-w-0 p-4 md:p-6 gap-4">
+<div class="no-print bg-white rounded-2xl border border-slate-200 p-3 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+<div class="flex flex-wrap items-center gap-2">
+<button id="btn-focus" onclick="toggleFocusMode()" class="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-semibold text-slate-700 flex items-center gap-1.5" title="Tam Ekran Odak Modu (Esc ile çıkış)">
+<span>⛶</span><span>Tam Ekran</span>
+</button>
+<div class="flex items-center border border-slate-200 rounded-lg overflow-hidden text-xs font-semibold">
+<button onclick="shiftWeek(-1)" class="px-2.5 py-1.5 hover:bg-slate-100 text-slate-700">&lt; Önceki</button>
+<span id="date-range-label" class="px-3 py-1.5 bg-slate-50 border-x border-slate-200 text-slate-800 min-w-[165px] text-center"></span>
+<button onclick="shiftWeek(1)" class="px-2.5 py-1.5 hover:bg-slate-100 text-slate-700">Sonraki &gt;</button>
+</div>
+<div class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg text-xs font-semibold">
+<span class="px-2 text-slate-500">Süre:</span>
+<button onclick="setWeekCount(1)" data-wc="1" class="wc-btn px-2.5 py-1 rounded-md">1 Hf</button>
+<button onclick="setWeekCount(2)" data-wc="2" class="wc-btn px-2.5 py-1 rounded-md">2 Hf</button>
+<button onclick="setWeekCount(3)" data-wc="3" class="wc-btn px-2.5 py-1 rounded-md">3 Hf</button>
+<button onclick="setWeekCount(4)" data-wc="4" class="wc-btn px-2.5 py-1 rounded-md">4 Hf</button>
+</div>
+</div>
+<div class="flex flex-wrap items-center gap-2">
+<button onclick="openPrintPreview()" class="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-semibold text-slate-700">🖨️ A4 PDF Önizleme</button>
+<button id="btn-unpublish-all" onclick="bulkPublishState('TASLAK')" class="px-3 py-1.5 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 text-xs font-semibold text-amber-800">Tümünü Geri Al (0)</button>
+<button onclick="bulkPublishState('YAYINDA')" class="px-3 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-xs font-semibold text-emerald-800">Tümünü Yayınla</button>
+<button onclick="openBulkModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold">Toplu Ata</button>
+<button onclick="openTaskModal()" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm">+ Görev Ekle</button>
+</div>
+</div>
+<div class="no-print bg-white rounded-2xl border border-slate-200 p-3 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+<div class="flex flex-wrap items-center gap-3">
+<div class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg text-xs font-semibold">
+<button onclick="setExamFilter('Tümü')" data-exam="Tümü" class="exam-btn px-3 py-1 rounded-md">Tümü</button>
+<button onclick="setExamFilter('YKS')" data-exam="YKS" class="exam-btn px-3 py-1 rounded-md">YKS</button>
+<button onclick="setExamFilter('LGS')" data-exam="LGS" class="exam-btn px-3 py-1 rounded-md">LGS</button>
+</div>
+<select id="student-select" onchange="onStudentChange()" class="text-sm font-semibold border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"></select>
+</div>
+<div class="flex items-center gap-3 flex-1 max-w-md">
+<span class="text-xs font-semibold text-slate-500 whitespace-nowrap">Haftalık İlerleme:</span>
+<div class="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+<div id="progress-bar" class="h-full bg-emerald-500 transition-all duration-300" style="width:0%"></div>
+</div>
+<span id="progress-text" class="text-xs font-bold text-slate-700 whitespace-nowrap">0/0 (%0)</span>
+</div>
+</div>
+<div id="weeks-container" class="flex flex-col gap-6"></div>
+</main>
+</div>
+<div id="plan-modal" class="no-print hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+<div class="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-xl">
+<div class="flex items-center justify-between mb-4">
+<div><h3 class="text-lg font-bold text-slate-900">Plan Seç</h3><p class="text-xs text-slate-500">Deneme süreniz bitmeden kurumunuza uygun planı seçin.</p></div>
+<button onclick="closeModal('plan-modal')" class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500">✕</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="border border-slate-200 rounded-xl p-4 flex flex-col justify-between">
+<div><div class="text-sm font-bold text-slate-800">Başlangıç</div><div class="text-2xl font-extrabold text-slate-900 mt-1">₺790<span class="text-xs font-normal text-slate-500">/ay</span></div><ul class="mt-3 space-y-1.5 text-xs text-slate-600"><li>• 20 öğrenciye kadar</li><li>• Haftalık program &amp; PDF</li><li>• WhatsApp/PDF paylaşım</li></ul></div>
+<button onclick="selectPlan('Başlangıç')" class="mt-4 w-full py-2 rounded-lg border border-slate-300 hover:bg-slate-50 text-xs font-semibold">Seç</button>
+</div>
+<div class="border-2 border-emerald-500 bg-emerald-50/40 rounded-xl p-4 flex flex-col justify-between relative">
+<span class="absolute -top-2.5 right-3 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">ÖNERİLEN</span>
+<div><div class="text-sm font-bold text-emerald-900">Profesyonel</div><div class="text-2xl font-extrabold text-slate-900 mt-1">₺1.490<span class="text-xs font-normal text-slate-500">/ay</span></div><ul class="mt-3 space-y-1.5 text-xs text-slate-700"><li>• 100 öğrenciye kadar</li><li>• Toplu atama &amp; şablonlar</li><li>• Çoklu hafta &amp; analiz</li></ul></div>
+<button onclick="selectPlan('Profesyonel')" class="mt-4 w-full py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold">Seç</button>
+</div>
+<div class="border border-slate-200 rounded-xl p-4 flex flex-col justify-between">
+<div><div class="text-sm font-bold text-slate-800">Kurum / Akademi</div><div class="text-2xl font-extrabold text-slate-900 mt-1">₺2.990<span class="text-xs font-normal text-slate-500">/ay</span></div><ul class="mt-3 space-y-1.5 text-xs text-slate-600"><li>• Sınırsız öğrenci &amp; koç</li><li>• Özel alan adı &amp; API</li><li>• Öncelikli destek</li></ul></div>
+<button onclick="selectPlan('Kurum / Akademi')" class="mt-4 w-full py-2 rounded-lg border border-slate-300 hover:bg-slate-50 text-xs font-semibold">Seç</button>
+</div>
+</div>
+</div>
+</div>
+<div id="task-modal" class="no-print hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+<div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+<div class="flex items-center justify-between mb-4">
+<h3 id="task-modal-title" class="text-lg font-bold text-slate-900">Görev Ekle</h3>
+<button onclick="closeModal('task-modal')" class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500">✕</button>
+</div>
+<div class="mb-4">
+<div class="flex items-center justify-between mb-1.5">
+<span class="text-xs font-bold text-slate-600 uppercase tracking-wider">Sık Kullanılan Görevler</span>
+<button onclick="saveTaskTemplate()" class="text-xs font-semibold text-emerald-700 hover:underline">+ Mevcut Formu Kaydet</button>
+</div>
+<div id="quick-templates" class="flex flex-wrap gap-1.5"></div>
+</div>
+<div class="space-y-3 text-sm">
+<div>
+<label class="block text-xs font-semibold text-slate-600 mb-1">Gün Seçimi</label>
+<div id="task-day-pills" class="grid grid-cols-7 gap-1.5"></div>
+</div>
+<div>
+<label class="block text-xs font-semibold text-slate-600 mb-1">Ders Ara &amp; Seç (13 TYT/AYT)</label>
+<input id="task-subject-search" oninput="renderSubjectOptions()" type="text" placeholder="Ders ara (örn: Matematik, Fizik)..." class="w-full mb-1.5 px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+<select id="task-subject" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-medium bg-white"></select>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+<div>
+<label class="block text-xs font-semibold text-slate-600 mb-1">Aktivite</label>
+<select id="task-activity" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white"></select>
+</div>
+<div>
+<label class="block text-xs font-semibold text-slate-600 mb-1">Hedef</label>
+<input id="task-target" type="text" placeholder="Örn: 40 Soru / 60 Dk" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+</div>
+</div>
+<div>
+<label class="block text-xs font-semibold text-slate-600 mb-1">Konu</label>
+<input id="task-topic" type="text" placeholder="Örn: Problemler, Paragraf, Türev..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+</div>
+<div>
+<label class="block text-xs font-semibold text-slate-600 mb-1">Kart Rengi</label>
+<div id="task-color-pills" class="flex flex-wrap gap-2"></div>
+</div>
+</div>
+<div class="mt-5 flex justify-end gap-2">
+<button onclick="closeModal('task-modal')" class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50">İptal</button>
+<button onclick="saveTaskFromModal()" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold">Kaydet</button>
+</div>
+</div>
+</div>
+<div id="bulk-modal" class="no-print hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+<div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl max-h-[92vh] overflow-y-auto">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-lg font-bold text-slate-900">Toplu Görev Ata</h3>
+<button onclick="closeModal('bulk-modal')" class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500">✕</button>
+</div>
+<div class="mb-4">
+<div class="flex items-center justify-between mb-1.5">
+<span class="text-xs font-bold text-slate-600 uppercase tracking-wider">Hazır Şablonlar</span>
+<button onclick="saveBulkTemplate()" class="text-xs font-semibold text-emerald-700 hover:underline">Şablon yap</button>
+</div>
+<div id="bulk-templates" class="flex flex-wrap gap-1.5"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+<div>
+<div class="flex items-center justify-between mb-1">
+<label class="text-xs font-semibold text-slate-600">Öğrenciler</label>
+<button onclick="toggleAllBulkStudents()" class="text-[11px] font-semibold text-emerald-700 hover:underline">Tümünü Seç/Kaldır</button>
+</div>
+<div id="bulk-students" class="border border-slate-200 rounded-xl p-2 max-h-36 overflow-y-auto space-y-1"></div>
+</div>
+<div class="space-y-3">
+<div>
+<label class="block text-xs font-semibold text-slate-600 mb-1">Periyot</label>
+<div class="grid grid-cols-2 gap-2">
+<button type="button" onclick="setBulkPeriod('Haftalık')" data-bp="Haftalık" class="bp-btn py-1.5 rounded-lg border text-xs font-semibold">Haftalık</button>
+<button type="button" onclick="setBulkPeriod('Aylık')" data-bp="Aylık" class="bp-btn py-1.5 rounded-lg border text-xs font-semibold">Aylık</button>
+</div>
+</div>
+<div>
+<label class="block text-xs font-semibold text-slate-600 mb-1">Hızlı Süre Kısayolu</label>
+<div class="grid grid-cols-4 gap-1.5">
+<button type="button" onclick="setBulkWeeks(1)" data-bw="1" class="bw-btn py-1.5 rounded-lg border text-xs font-semibold">1 Hf</button>
+<button type="button" onclick="setBulkWeeks(2)" data-bw="2" class="bw-btn py-1.5 rounded-lg border text-xs font-semibold">2 Hf</button>
+<button type="button" onclick="setBulkWeeks(3)" data-bw="3" class="bw-btn py-1.5 rounded-lg border text-xs font-semibold">3 Hf</button>
+<button type="button" onclick="setBulkWeeks(4)" data-bw="4" class="bw-btn py-1.5 rounded-lg border text-xs font-semibold">4 Hf</button>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-3">
+<label class="block text-xs font-semibold text-slate-600 mb-1">Günler (Pzt–Paz)</label>
+<div id="bulk-days" class="grid grid-cols-7 gap-1.5"></div>
+</div>
+<div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+<div><label class="block text-xs font-semibold text-slate-600 mb-1">Ders</label><select id="bulk-subject" onchange="updateBulkPreview()" class="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white"></select></div>
+<div><label class="block text-xs font-semibold text-slate-600 mb-1">Aktivite</label><select id="bulk-activity" onchange="updateBulkPreview()" class="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white"></select></div>
+<div><label class="block text-xs font-semibold text-slate-600 mb-1">Konu</label><input id="bulk-topic" oninput="updateBulkPreview()" type="text" placeholder="Örn: Genel Tekrar" class="w-full px-3 py-2 border border-slate-200 rounded-lg" /></div>
+<div><label class="block text-xs font-semibold text-slate-600 mb-1">Hedef</label><input id="bulk-target" oninput="updateBulkPreview()" type="text" placeholder="Örn: 30 Soru" class="w-full px-3 py-2 border border-slate-200 rounded-lg" /></div>
+</div>
+<div class="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200">
+<div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">ÖNİZLEME</div>
+<div id="bulk-preview" class="text-xs text-slate-700 font-medium"></div>
+</div>
+<div class="mt-4 flex justify-end gap-2">
+<button onclick="closeModal('bulk-modal')" class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700">İptal</button>
+<button id="bulk-submit-btn" onclick="applyBulkAssign()" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold">0 Görev Ata</button>
+</div>
+</div>
+</div>
+<div id="print-preview-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4 overflow-auto">
+<div id="print-preview-sheet" class="bg-white rounded-2xl max-w-6xl w-full p-6 shadow-2xl">
+<div class="no-print flex items-center justify-between mb-4 pb-3 border-b border-slate-200">
+<div><h3 class="text-base font-bold text-slate-900">Yatay A4 PDF Önizleme</h3><p class="text-xs text-slate-500">Sayfa düzeni: A4 Landscape (Yatay)</p></div>
+<div class="flex gap-2">
+<button onclick="window.print()" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold">🖨️ Yazdır / PDF Kaydet</button>
+<button onclick="closeModal('print-preview-modal')" class="px-3 py-2 rounded-lg border border-slate-200 text-xs font-semibold">Kapat</button>
+</div>
+</div>
+<div id="print-content"></div>
+</div>
+</div>
+<div id="meeting-reminder" class="no-print fixed bottom-4 right-4 z-40 bg-slate-900 text-white rounded-2xl shadow-xl p-4 max-w-xs border border-slate-700 flex flex-col gap-2">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span><span class="text-xs font-bold uppercase tracking-wider text-emerald-300">Görüşme Hatırlatıcısı</span></div>
+<button onclick="document.getElementById('meeting-reminder').classList.add('hidden')" class="text-slate-400 hover:text-white text-xs">✕</button>
+</div>
+<div class="text-xs text-slate-200"><strong class="text-white">30 dk sonra</strong> öğrenci koçluk görüşmesi: <span id="reminder-student" class="font-semibold text-emerald-300">Zeynep Kaya</span></div>
+<div class="flex gap-2 mt-1">
+<button onclick="snoozeReminder()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] font-semibold">5 dk Ertele</button>
+<button onclick="document.getElementById('meeting-reminder').classList.add('hidden')" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-[11px] font-semibold">Tamam</button>
+</div>
+</div>
+<div id="toast" class="no-print hidden fixed top-5 right-5 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-semibold"></div>
+  <script>
+const STORAGE_KEY = 'adimplan_program_v1';
+const SUBJECTS = ['TYT Matematik','TYT Türkçe','TYT Fizik','TYT Kimya','TYT Biyoloji','TYT Tarih','TYT Coğrafya','TYT Felsefe','AYT Matematik','AYT Fizik','AYT Kimya','AYT Biyoloji','AYT Edebiyat'];
+const ACTIVITIES = ['Konu Çalışma','Soru Çözümü','Deneme Analizi','Tekrar','Video İzleme','Özet Çıkarma','Branş Denemesi'];
+const DAYS_SHORT = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+const DAYS_FULL = ['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
+const MONTHS_TR = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+const COLORS = [
+{id:'emerald', bg:'bg-emerald-50 border-emerald-200', badge:'bg-emerald-100 text-emerald-800', dot:'bg-emerald-500'},
+{id:'blue', bg:'bg-blue-50 border-blue-200', badge:'bg-blue-100 text-blue-800', dot:'bg-blue-500'},
+{id:'amber', bg:'bg-amber-50 border-amber-200', badge:'bg-amber-100 text-amber-800', dot:'bg-amber-500'},
+{id:'rose', bg:'bg-rose-50 border-rose-200', badge:'bg-rose-100 text-rose-800', dot:'bg-rose-500'},
+{id:'violet', bg:'bg-violet-50 border-violet-200', badge:'bg-violet-100 text-violet-800', dot:'bg-violet-500'},
+{id:'cyan', bg:'bg-cyan-50 border-cyan-200', badge:'bg-cyan-100 text-cyan-800', dot:'bg-cyan-500'},
+{id:'orange', bg:'bg-orange-50 border-orange-200', badge:'bg-orange-100 text-orange-800', dot:'bg-orange-500'},
+{id:'slate', bg:'bg-slate-50 border-slate-200', badge:'bg-slate-200 text-slate-800', dot:'bg-slate-500'}
+];
+const STUDENTS = [
+{id:'s1', name:'Zeynep Kaya', exam:'YKS'},
+{id:'s2', name:'Emir Yılmaz', exam:'YKS'},
+{id:'s3', name:'Elif Demir', exam:'LGS'},
+{id:'s4', name:'Mert Aydın', exam:'LGS'},
+{id:'s5', name:'Selin Arslan', exam:'YKS'}
+];
+
+function getMonday(d) {
+const dt = new Date(d);
+const day = dt.getDay();
+const diff = dt.getDate() - day + (day === 0 ? -6 : 1);
+dt.setDate(diff);
+dt.setHours(0,0,0,0);
+return dt;
+}
+function fmtISO(d) {
+const y = d.getFullYear();
+const m = String(d.getMonth() + 1).padStart(2, '0');
+const da = String(d.getDate()).padStart(2, '0');
+return y + '-' + m + '-' + da;
+}
+function addDays(d, n) {
+const r = new Date(d);
+r.setDate(r.getDate() + n);
+return r;
+}
+function fmtShort(d) {
+return d.getDate() + ' ' + MONTHS_TR[d.getMonth()];
+}
+
+const initialMonday = getMonday(new Date());
+let state = loadState();
+
+function loadState() {
+try {
+const raw = localStorage.getItem(STORAGE_KEY);
+if (raw) return JSON.parse(raw);
+} catch (e) {}
+const m = initialMonday;
+return {
+plan: null,
+examFilter: 'Tümü',
+studentId: 's1',
+weekOffset: 0,
+weekCount: 1,
+quickTemplates: [
+{name:'Paragraf Rutini', subject:'TYT Türkçe', activity:'Soru Çözümü', topic:'Paragraf', target:'25 Soru', color:'blue'},
+{name:'Problem Kampı', subject:'TYT Matematik', activity:'Soru Çözümü', topic:'Sayı-Kesir Problemleri', target:'30 Soru', color:'emerald'},
+{name:'AYT Fen Tekrar', subject:'AYT Fizik', activity:'Tekrar', topic:'Elektrik ve Manyetizma', target:'45 Dk', color:'violet'}
+],
+bulkTemplates: [
+{name:'Haftalık Paragraf', subject:'TYT Türkçe', activity:'Soru Çözümü', topic:'Paragraf Rutini', target:'20 Soru', days:[0,1,2,3,4], weeks:2},
+{name:'Matematik Deneme', subject:'TYT Matematik', activity:'Branş Denemesi', topic:'Genel Deneme', target:'1 Deneme', days:[2,5], weeks:4}
+],
+tasks: [
+{id:'t1', studentId:'s1', date:fmtISO(addDays(m,0)), subject:'TYT Matematik', activity:'Konu Çalışma', topic:'Fonksiyonlar', target:'60 Dk', color:'emerald', status:'YAYINDA', done:true},
+{id:'t2', studentId:'s1', date:fmtISO(addDays(m,0)), subject:'TYT Türkçe', activity:'Soru Çözümü', topic:'Paragraf', target:'30 Soru', color:'blue', status:'YAYINDA', done:false},
+{id:'t3', studentId:'s1', date:fmtISO(addDays(m,1)), subject:'AYT Fizik', activity:'Video İzleme', topic:'İtme ve Momentum', target:'2 Video', color:'violet', status:'TASLAK', done:false},
+{id:'t4', studentId:'s1', date:fmtISO(addDays(m,2)), subject:'TYT Kimya', activity:'Soru Çözümü', topic:'Mol Kavramı', target:'40 Soru', color:'amber', status:'YAYINDA', done:true},
+{id:'t5', studentId:'s1', date:fmtISO(addDays(m,4)), subject:'AYT Matematik', activity:'Branş Denemesi', topic:'Karma Deneme', target:'40 Soru', color:'rose', status:'TASLAK', done:false},
+{id:'t6', studentId:'s3', date:fmtISO(addDays(m,0)), subject:'TYT Türkçe', activity:'Soru Çözümü', topic:'Sözel Mantık', target:'25 Soru', color:'cyan', status:'YAYINDA', done:false}
+]
+};
+}
+
+function saveState() {
+try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+let editingTaskId = null;
+let modalSelectedDays = [0];
+let modalColor = 'emerald';
+let bulkSelectedStudents = ['s1'];
+let bulkPeriod = 'Haftalık';
+let bulkWeeks = 1;
+let bulkDays = [0,2,4];
+let draggedTaskId = null;
+let openPaletteTaskId = null;
+
+function showToast(msg) {
+const el = document.getElementById('toast');
+el.textContent = msg;
+el.classList.remove('hidden');
+clearTimeout(window._toastTimer);
+window._toastTimer = setTimeout(() => el.classList.add('hidden'), 2600);
+}
+
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+function selectPlan(name) {
+state.plan = name;
+saveState();
+const b = document.getElementById('active-plan-badge');
+b.textContent = 'Seçilen Plan: ' + name;
+b.classList.remove('hidden');
+closeModal('plan-modal');
+showToast(name + ' planı seçildi');
+}
+
+function toggleSidebar() {
+const sb = document.getElementById('sidebar');
+sb.classList.toggle('w-64');
+sb.classList.toggle('w-20');
+document.querySelectorAll('.sidebar-label').forEach(el => el.classList.toggle('hidden'));
+}
+
+function toggleFocusMode() {
+document.body.classList.toggle('focus-mode');
+const btn = document.getElementById('btn-focus');
+const active = document.body.classList.contains('focus-mode');
+btn.innerHTML = active ? '<span>✕</span><span>Odaktan Çık (Esc)</span>' : '<span>⛶</span><span>Tam Ekran</span>';
+}
+
+document.addEventListener('keydown', e => {
+if (e.key === 'Escape') {
+if (document.body.classList.contains('focus-mode')) toggleFocusMode();
+['plan-modal','task-modal','bulk-modal','print-preview-modal'].forEach(closeModal);
+}
+});
+
+function shiftWeek(delta) {
+state.weekOffset += delta;
+saveState();
+renderAll();
+}
+
+function setWeekCount(n) {
+state.weekCount = n;
+saveState();
+renderAll();
+}
+
+function setExamFilter(exam) {
+state.examFilter = exam;
+const filtered = getFilteredStudents();
+if (!filtered.some(s => s.id === state.studentId) && filtered.length) {
+state.studentId = filtered[0].id;
+}
+saveState();
+renderAll();
+}
+
+function getFilteredStudents() {
+if (state.examFilter === 'Tümü') return STUDENTS;
+return STUDENTS.filter(s => s.exam === state.examFilter);
+}
+
+function onStudentChange() {
+state.studentId = document.getElementById('student-select').value;
+saveState();
+renderAll();
+}
+
+function getVisibleDates() {
+const base = addDays(initialMonday, state.weekOffset * 7);
+const dates = [];
+for (let w = 0; w < state.weekCount; w++) {
+const wStart = addDays(base, w * 7);
+const days = [];
+for (let d = 0; d < 7; d++) days.push(addDays(wStart, d));
+dates.push({weekIndex: w, start: wStart, end: addDays(wStart, 6), days});
+}
+return dates;
+}
+
+function getVisibleTasks() {
+const weeks = getVisibleDates();
+const minDate = fmtISO(weeks[0].start);
+const maxDate = fmtISO(weeks[weeks.length - 1].end);
+return state.tasks.filter(t => t.studentId === state.studentId && t.date >= minDate && t.date <= maxDate);
+}
+
+function renderAll() {
+if (state.plan) {
+const b = document.getElementById('active-plan-badge');
+b.textContent = 'Seçilen Plan: ' + state.plan;
+b.classList.remove('hidden');
+}
+document.querySelectorAll('.wc-btn').forEach(btn => {
+const active = Number(btn.dataset.wc) === state.weekCount;
+btn.className = 'wc-btn px-2.5 py-1 rounded-md ' + (active ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-900');
+});
+document.querySelectorAll('.exam-btn').forEach(btn => {
+const active = btn.dataset.exam === state.examFilter;
+btn.className = 'exam-btn px-3 py-1 rounded-md ' + (active ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-900');
+});
+const sel = document.getElementById('student-select');
+const filtered = getFilteredStudents();
+sel.innerHTML = filtered.map(s => '<option value="' + s.id + '"' + (s.id === state.studentId ? ' selected' : '') + '>' + s.name + ' (' + s.exam + ')</option>').join('');
+const weeks = getVisibleDates();
+const firstD = weeks[0].start;
+const lastD = weeks[weeks.length - 1].end;
+document.getElementById('date-range-label').textContent = fmtShort(firstD) + ' – ' + fmtShort(lastD) + ' ' + lastD.getFullYear();
+
+const visibleTasks = getVisibleTasks();
+const pubCount = visibleTasks.filter(t => t.status === 'YAYINDA').length;
+document.getElementById('btn-unpublish-all').textContent = 'Tümünü Geri Al (' + pubCount + ')';
+
+const doneCount = visibleTasks.filter(t => t.done).length;
+const totalCount = visibleTasks.length;
+const pct = totalCount ? Math.round((doneCount / totalCount) * 100) : 0;
+document.getElementById('progress-bar').style.width = pct + '%';
+document.getElementById('progress-text').textContent = doneCount + '/' + totalCount + ' (%' + pct + ')';
+
+const container = document.getElementById('weeks-container');
+container.innerHTML = weeks.map((w, idx) => renderWeekGrid(w, idx)).join('');
+}
+
+function renderWeekGrid(week, idx) {
+const header = state.weekCount > 1 ? '<div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">' + (idx + 1) + '. Hafta (' + fmtShort(week.start) + ' – ' + fmtShort(week.end) + ')</div>' : '';
+const cols = week.days.map((d, dIdx) => {
+const iso = fmtISO(d);
+const dayTasks = state.tasks.filter(t => t.studentId === state.studentId && t.date === iso);
+const cards = dayTasks.map(t => renderTaskCard(t)).join('');
+return '<div class="bg-white rounded-2xl border border-slate-200 flex flex-col min-h-[320px] shadow-sm overflow-hidden" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,\'' + iso + '\')">' +
+'<div class="bg-slate-900 text-white px-3 py-2.5 flex items-center justify-between">' +
+'<span class="text-xs font-bold">' + DAYS_FULL[dIdx] + '</span>' +
+'<span class="text-[11px] text-slate-300 font-medium">' + fmtShort(d) + '</span>' +
+'</div>' +
+'<div class="p-2.5 flex-1 flex flex-col gap-2">' +
+cards +
+'<button onclick="openTaskModal(null,\'' + iso + '\')" class="mt-auto w-full py-2 rounded-xl border-2 border-dashed border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/50 text-slate-400 hover:text-emerald-700 text-sm font-bold transition">+</button>' +
+'</div></div>';
+}).join('');
+return '<div>' + header + '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">' + cols + '</div></div>';
+}
+
+function renderTaskCard(t) {
+const c = COLORS.find(x => x.id === t.color) || COLORS[0];
+const statusBadge = t.status === 'YAYINDA'
+? '<button onclick="toggleStatus(\'' + t.id + '\')" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-600 text-white">YAYINDA</button>'
+: '<button onclick="toggleStatus(\'' + t.id + '\')" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500 text-white">TASLAK</button>';
+const paletteRow = openPaletteTaskId === t.id
+? '<div class="flex flex-wrap gap-1 pt-1.5 mt-1.5 border-t border-slate-200/70">' + COLORS.map(col => '<button onclick="setTaskColor(\'' + t.id + '\',\'' + col.id + '\')" class="w-3.5 h-3.5 rounded-full ' + col.dot + (col.id === t.color ? ' ring-2 ring-offset-1 ring-slate-700' : '') + '"></button>').join('') + '</div>'
+: '';
+return '<div draggable="true" ondragstart="onDragStart(event,\'' + t.id + '\')" class="rounded-xl border p-2.5 cursor-grab active:cursor-grabbing transition ' + c.bg + (t.done ? ' opacity-75' : '') + '">' +
+'<div class="flex items-center justify-between gap-1 mb-1.5">' +
+statusBadge +
+'<div class="flex items-center gap-1">' +
+'<button onclick="togglePalette(\'' + t.id + '\')" title="Renk Seç" class="w-3.5 h-3.5 rounded-full ' + c.dot + ' border border-white shadow-sm"></button>' +
+'<button onclick="toggleDone(\'' + t.id + '\')" title="Tamamlandı" class="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold border ' + (t.done ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white border-slate-300 text-slate-400 hover:border-emerald-500') + '">✓</button>' +
+'</div></div>' +
+'<div class="inline-block px-2 py-0.5 rounded-md text-[10px] font-bold mb-1 ' + c.badge + '">' + t.subject + '</div>' +
+'<div class="text-xs font-bold text-slate-800 ' + (t.done ? 'line-through' : '') + '">' + t.topic + '</div>' +
+'<div class="text-[11px] text-slate-600 mt-0.5">' + t.activity + (t.target ? ' • <strong>' + t.target + '</strong>' : '') + '</div>' +
+'<div class="flex items-center justify-end gap-2 mt-2 text-[11px] font-semibold text-slate-500">' +
+'<button onclick="openTaskModal(\'' + t.id + '\')" class="hover:text-slate-900">Düzenle</button>' +
+'<button onclick="deleteTask(\'' + t.id + '\')" class="hover:text-rose-600">Sil</button>' +
+'</div>' + paletteRow + '</div>';
+}
+
+function onDragStart(e, id) { draggedTaskId = id; e.dataTransfer.effectAllowed = 'move'; }
+function onDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function onDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+function onDrop(e, targetIso) {
+e.preventDefault();
+e.currentTarget.classList.remove('drag-over');
+if (!draggedTaskId) return;
+const t = state.tasks.find(x => x.id === draggedTaskId);
+if (t && t.date !== targetIso) {
+t.date = targetIso;
+saveState();
+renderAll();
+showToast('Görev taşındı');
+}
+draggedTaskId = null;
+}
+
+function toggleDone(id) {
+const t = state.tasks.find(x => x.id === id);
+if (t) { t.done = !t.done; saveState(); renderAll(); }
+}
+function toggleStatus(id) {
+const t = state.tasks.find(x => x.id === id);
+if (t) { t.status = t.status === 'YAYINDA' ? 'TASLAK' : 'YAYINDA'; saveState(); renderAll(); }
+}
+function togglePalette(id) {
+openPaletteTaskId = openPaletteTaskId === id ? null : id;
+renderAll();
+}
+function setTaskColor(id, colorId) {
+const t = state.tasks.find(x => x.id === id);
+if (t) { t.color = colorId; openPaletteTaskId = null; saveState(); renderAll(); }
+}
+function deleteTask(id) {
+state.tasks = state.tasks.filter(x => x.id !== id);
+saveState();
+renderAll();
+showToast('Görev silindi');
+}
+function bulkPublishState(newStatus) {
+const visibleIds = new Set(getVisibleTasks().map(t => t.id));
+state.tasks.forEach(t => { if (visibleIds.has(t.id)) t.status = newStatus; });
+saveState();
+renderAll();
+showToast(newStatus === 'YAYINDA' ? 'Tüm görevler yayınlandı' : 'Tüm görevler taslağa alındı');
+}
+
+function renderSubjectOptions(selectedVal) {
+const q = (document.getElementById('task-subject-search').value || '').toLowerCase();
+const list = SUBJECTS.filter(s => s.toLowerCase().includes(q));
+const sel = document.getElementById('task-subject');
+sel.innerHTML = list.map(s => '<option value="' + s + '"' + (s === selectedVal ? ' selected' : '') + '>' + s + '</option>').join('');
+}
+
+function openTaskModal(taskId, presetDate) {
+editingTaskId = taskId || null;
+document.getElementById('task-modal-title').textContent = editingTaskId ? 'Görevi Düzenle' : 'Görev Ekle';
+document.getElementById('task-subject-search').value = '';
+const actSel = document.getElementById('task-activity');
+actSel.innerHTML = ACTIVITIES.map(a => '<option value="' + a + '">' + a + '</option>').join('');
+if (editingTaskId) {
+const t = state.tasks.find(x => x.id === editingTaskId);
+const wStart = addDays(initialMonday, state.weekOffset * 7);
+const diff = Math.round((new Date(t.date) - wStart) / 86400000);
+modalSelectedDays = [((diff % 7) + 7) % 7];
+modalColor = t.color;
+renderSubjectOptions(t.subject);
+actSel.value = t.activity;
+document.getElementById('task-topic').value = t.topic;
+document.getElementById('task-target').value = t.target;
+} else {
+if (presetDate) {
+const wStart = addDays(initialMonday, state.weekOffset * 7);
+const diff = Math.round((new Date(presetDate) - wStart) / 86400000);
+modalSelectedDays = [((diff % 7) + 7) % 7];
+} else {
+modalSelectedDays = [0];
+}
+modalColor = 'emerald';
+renderSubjectOptions(SUBJECTS[0]);
+document.getElementById('task-topic').value = '';
+document.getElementById('task-target').value = '';
+}
+renderTaskModalControls();
+openModal('task-modal');
+}
+
+function renderTaskModalControls() {
+document.getElementById('quick-templates').innerHTML = state.quickTemplates.map((tpl, i) =>
+'<button type="button" onclick="applyQuickTemplate(' + i + ')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-xs font-medium text-slate-700">' + tpl.name + '</button>'
+).join('');
+document.getElementById('task-day-pills').innerHTML = DAYS_SHORT.map((d, i) => {
+const active = modalSelectedDays.includes(i);
+return '<button type="button" onclick="toggleModalDay(' + i + ')" class="py-1.5 rounded-lg text-xs font-semibold border ' + (active ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200') + '">' + d + '</button>';
+}).join('');
+document.getElementById('task-color-pills').innerHTML = COLORS.map(c =>
+'<button type="button" onclick="modalColor=\'' + c.id + '\';renderTaskModalControls()" class="w-6 h-6 rounded-full ' + c.dot + (modalColor === c.id ? ' ring-2 ring-offset-2 ring-slate-900' : '') + '"></button>'
+).join('');
+}
+
+function toggleModalDay(idx) {
+if (editingTaskId) { modalSelectedDays = [idx]; }
+else {
+if (modalSelectedDays.includes(idx)) {
+if (modalSelectedDays.length > 1) modalSelectedDays = modalSelectedDays.filter(x => x !== idx);
+} else modalSelectedDays.push(idx);
+}
+renderTaskModalControls();
+}
+
+function applyQuickTemplate(idx) {
+const tpl = state.quickTemplates[idx];
+if (!tpl) return;
+document.getElementById('task-subject-search').value = '';
+renderSubjectOptions(tpl.subject);
+document.getElementById('task-activity').value = tpl.activity;
+document.getElementById('task-topic').value = tpl.topic;
+document.getElementById('task-target').value = tpl.target;
+modalColor = tpl.color;
+renderTaskModalControls();
+}
+
+function saveTaskTemplate() {
+const subject = document.getElementById('task-subject').value;
+const activity = document.getElementById('task-activity').value;
+const topic = document.getElementById('task-topic').value || 'Genel';
+const target = document.getElementById('task-target').value || '';
+state.quickTemplates.push({name: subject.split(' ')[1] + ' • ' + topic, subject, activity, topic, target, color: modalColor});
+saveState();
+renderTaskModalControls();
+showToast('Sık kullanılanlara kaydedildi');
+}
+
+function saveTaskFromModal() {
+const subject = document.getElementById('task-subject').value;
+const activity = document.getElementById('task-activity').value;
+const topic = document.getElementById('task-topic').value.trim() || 'Genel Çalışma';
+const target = document.getElementById('task-target').value.trim();
+const wStart = addDays(initialMonday, state.weekOffset * 7);
+if (editingTaskId) {
+const t = state.tasks.find(x => x.id === editingTaskId);
+if (t) {
+t.subject = subject; t.activity = activity; t.topic = topic; t.target = target; t.color = modalColor;
+t.date = fmtISO(addDays(wStart, modalSelectedDays[0]));
+}
+} else {
+modalSelectedDays.forEach(dIdx => {
+state.tasks.push({
+id: 't_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+studentId: state.studentId,
+date: fmtISO(addDays(wStart, dIdx)),
+subject, activity, topic, target, color: modalColor, status: 'TASLAK', done: false
+});
+});
+}
+saveState();
+closeModal('task-modal');
+renderAll();
+showToast(editingTaskId ? 'Görev güncellendi' : 'Görev eklendi');
+}
+
+function openBulkModal() {
+bulkSelectedStudents = [state.studentId];
+document.getElementById('bulk-subject').innerHTML = SUBJECTS.map(s => '<option value="' + s + '">' + s + '</option>').join('');
+document.getElementById('bulk-activity').innerHTML = ACTIVITIES.map(a => '<option value="' + a + '">' + a + '</option>').join('');
+renderBulkControls();
+openModal('bulk-modal');
+}
+
+function renderBulkControls() {
+document.getElementById('bulk-templates').innerHTML = state.bulkTemplates.map((tpl, i) =>
+'<button type="button" onclick="applyBulkTemplate(' + i + ')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-xs font-medium text-slate-700">' + tpl.name + '</button>'
+).join('');
+document.getElementById('bulk-students').innerHTML = STUDENTS.map(s =>
+'<label class="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer"><input type="checkbox" onchange="toggleBulkStudent(\'' + s.id + '\')" ' + (bulkSelectedStudents.includes(s.id) ? 'checked' : '') + ' class="rounded text-emerald-600" /><span>' + s.name + ' (' + s.exam + ')</span></label>'
+).join('');
+document.querySelectorAll('.bp-btn').forEach(b => {
+const act = b.dataset.bp === bulkPeriod;
+b.className = 'bp-btn py-1.5 rounded-lg border text-xs font-semibold ' + (act ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200');
+});
+document.querySelectorAll('.bw-btn').forEach(b => {
+const act = Number(b.dataset.bw) === bulkWeeks;
+b.className = 'bw-btn py-1.5 rounded-lg border text-xs font-semibold ' + (act ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-700 border-slate-200');
+});
+document.getElementById('bulk-days').innerHTML = DAYS_SHORT.map((d, i) => {
+const act = bulkDays.includes(i);
+return '<button type="button" onclick="toggleBulkDay(' + i + ')" class="py-1.5 rounded-lg border text-xs font-semibold ' + (act ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200') + '">' + d + '</button>';
+}).join('');
+updateBulkPreview();
+}
+
+function toggleBulkStudent(id) {
+if (bulkSelectedStudents.includes(id)) bulkSelectedStudents = bulkSelectedStudents.filter(x => x !== id);
+else bulkSelectedStudents.push(id);
+updateBulkPreview();
+}
+function toggleAllBulkStudents() {
+bulkSelectedStudents = bulkSelectedStudents.length === STUDENTS.length ? [] : STUDENTS.map(s => s.id);
+renderBulkControls();
+}
+function setBulkPeriod(p) {
+bulkPeriod = p;
+bulkWeeks = p === 'Aylık' ? 4 : 1;
+renderBulkControls();
+}
+function setBulkWeeks(w) { bulkWeeks = w; renderBulkControls(); }
+function toggleBulkDay(i) {
+if (bulkDays.includes(i)) bulkDays = bulkDays.filter(x => x !== i);
+else bulkDays.push(i);
+renderBulkControls();
+}
+function applyBulkTemplate(idx) {
+const tpl = state.bulkTemplates[idx];
+if (!tpl) return;
+document.getElementById('bulk-subject').value = tpl.subject;
+document.getElementById('bulk-activity').value = tpl.activity;
+document.getElementById('bulk-topic').value = tpl.topic;
+document.getElementById('bulk-target').value = tpl.target;
+bulkDays = [...tpl.days];
+bulkWeeks = tpl.weeks;
+renderBulkControls();
+}
+function saveBulkTemplate() {
+const subject = document.getElementById('bulk-subject').value;
+const activity = document.getElementById('bulk-activity').value;
+const topic = document.getElementById('bulk-topic').value || 'Genel';
+const target = document.getElementById('bulk-target').value || '';
+state.bulkTemplates.push({name: subject + ' (' + bulkWeeks + ' Hf)', subject, activity, topic, target, days: [...bulkDays], weeks: bulkWeeks});
+saveState();
+renderBulkControls();
+showToast('Toplu atama şablonu kaydedildi');
+}
+function updateBulkPreview() {
+const total = bulkSelectedStudents.length * bulkDays.length * bulkWeeks;
+const subj = document.getElementById('bulk-subject').value;
+const top = document.getElementById('bulk-topic').value || 'Genel Tekrar';
+document.getElementById('bulk-preview').textContent = bulkSelectedStudents.length + ' öğrenci × ' + bulkDays.length + ' gün × ' + bulkWeeks + ' hafta (' + bulkPeriod + ') = ' + total + ' adet "' + subj + ' - ' + top + '" görevi oluşturulacak.';
+document.getElementById('bulk-submit-btn').textContent = total + ' Görev Ata';
+}
+function applyBulkAssign() {
+const total = bulkSelectedStudents.length * bulkDays.length * bulkWeeks;
+if (!total) { showToast('En az 1 öğrenci ve 1 gün seçin'); return; }
+const subject = document.getElementById('bulk-subject').value;
+const activity = document.getElementById('bulk-activity').value;
+const topic = document.getElementById('bulk-topic').value.trim() || 'Genel Tekrar';
+const target = document.getElementById('bulk-target').value.trim();
+const baseMonday = addDays(initialMonday, state.weekOffset * 7);
+bulkSelectedStudents.forEach(sid => {
+for (let w = 0; w < bulkWeeks; w++) {
+bulkDays.forEach(d => {
+state.tasks.push({
+id: 'b_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+studentId: sid,
+date: fmtISO(addDays(baseMonday, w * 7 + d)),
+subject, activity, topic, target, color: 'emerald', status: 'YAYINDA', done: false
+});
+});
+}
+});
+saveState();
+closeModal('bulk-modal');
+renderAll();
+showToast(total + ' görev başarıyla atandı');
+}
+
+function openPrintPreview() {
+const st = STUDENTS.find(s => s.id === state.studentId);
+const weeks = getVisibleDates();
+let html = '<div class="mb-3 flex items-center justify-between border-b border-slate-300 pb-2"><div><h2 class="text-lg font-extrabold text-slate-900">Adimplan Haftalık Çalışma Programı</h2><div class="text-xs text-slate-600">Öğrenci: <strong>' + st.name + ' (' + st.exam + ')</strong> • Koç: Haluk Can Sarıöz</div></div><div class="text-xs font-semibold text-slate-700">' + document.getElementById('date-range-label').textContent + '</div></div>';
+weeks.forEach((w, idx) => {
+html += '<div class="mb-4"><div class="text-xs font-bold text-slate-700 mb-1">' + (idx + 1) + '. Hafta</div><table class="w-full border-collapse text-[11px]"><thead><tr class="bg-slate-900 text-white">';
+w.days.forEach((d, di) => { html += '<th class="border border-slate-700 p-1.5 text-left w-1/7">' + DAYS_FULL[di] + ' (' + fmtShort(d) + ')</th>'; });
+html += '</tr></thead><tbody><tr>';
+w.days.forEach(d => {
+const iso = fmtISO(d);
+const list = state.tasks.filter(t => t.studentId === state.studentId && t.date === iso);
+html += '<td class="border border-slate-300 p-1.5 align-top min-h-[90px]">' + (list.length ? list.map(t => '<div class="mb-1.5 p-1 rounded border border-slate-200 bg-slate-50"><div class="font-bold text-slate-900">' + t.subject + '</div><div>' + t.topic + '</div><div class="text-slate-600">' + t.activity + (t.target ? ' • ' + t.target : '') + '</div></div>').join('') : '<span class="text-slate-400">—</span>') + '</td>';
+});
+html += '</tr></tbody></table></div>';
+});
+document.getElementById('print-content').innerHTML = html;
+openModal('print-preview-modal');
+}
+
+function snoozeReminder() {
+const rem = document.getElementById('meeting-reminder');
+rem.classList.add('hidden');
+showToast('Hatırlatıcı 5 dk ertelendi');
+setTimeout(() => rem.classList.remove('hidden'), 5000);
+}
+
+renderAll();
+</script>
+</body>
+</html>
