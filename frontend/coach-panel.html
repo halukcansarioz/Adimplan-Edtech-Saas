@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Adimplan | Koç Yönetim Paneli</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    body { background: #f8fafc; color: #0f172a; }
+    .nav-item.active { background: #eef2ff; color: #4338ca; font-weight: 600; }
+    .tab-btn.active { background: #4f46e5; color: #ffffff; }
+    .subtab-btn.active { border-bottom: 2px solid #4f46e5; color: #4338ca; font-weight: 600; }
+    .cal-dot { width: 7px; height: 7px; border-radius: 9999px; display: inline-block; }
+    @media print { .no-print { display: none !important; } }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+  <!-- Üst Deneme Sürümü Bandı -->
+  <div class="no-print bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-4 py-2 text-xs sm:text-sm flex items-center justify-between gap-3">
+    <div class="flex items-center gap-2 font-medium">
+      <span class="inline-flex h-2 w-2 rounded-full bg-amber-300"></span>
+      <span>Deneme sürümü — 14 gün kaldı.</span>
+    </div>
+    <button id="openPlanModalBtn" class="bg-white text-indigo-700 hover:bg-indigo-50 font-semibold px-3 py-1 rounded-lg text-xs transition">Plan Seç</button>
+  </div>
+
+  <div class="flex flex-1 min-h-0">
+    <!-- Sol Menü -->
+    <aside class="no-print w-64 bg-white border-r border-slate-200 flex flex-col justify-between shrink-0">
+      <div class="p-4 overflow-y-auto">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <div class="text-lg font-extrabold tracking-tight text-indigo-700">Adimplan</div>
+            <div class="text-[10px] font-bold tracking-widest text-slate-400 uppercase">YÖNETİM</div>
+          </div>
+          <div class="relative">
+            <button id="notifBellBtn" class="p-2 rounded-xl hover:bg-slate-100 relative" title="Bildirimler">
+              <span class="text-lg">🔔</span>
+              <span id="notifBadge" class="absolute -top-0.5 -right-0.5 bg-rose-500 text-white text-[10px] font-bold px-1.5 rounded-full">3</span>
+            </button>
+            <div id="notifPopover" class="hidden absolute left-0 mt-2 w-72 bg-white border border-slate-200 rounded-xl shadow-xl p-3 z-40 text-xs space-y-2"></div>
+          </div>
+        </div>
+        <nav id="sidebarNav" class="space-y-4 text-sm"></nav>
+      </div>
+      <div class="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between gap-2">
+        <div class="min-w-0">
+          <div id="sidebarCoachName" class="text-xs font-bold text-slate-800 truncate">Koç Paneli</div>
+          <div id="sidebarCoachRole" class="text-[11px] text-slate-500 truncate">Baş Koç • Aktif</div>
+        </div>
+        <button id="logoutBtn" class="text-xs font-semibold text-rose-600 hover:bg-rose-50 px-2.5 py-1.5 rounded-lg">Çıkış</button>
+      </div>
+    </aside>
+
+    <!-- Ana İçerik -->
+    <main id="mainContent" class="flex-1 p-5 sm:p-6 overflow-y-auto"></main>
+  </div>
+
+  <!-- Sağ Alt Görüşme Hatırlatıcısı -->
+  <div id="reminderBox" class="no-print fixed bottom-4 right-4 z-30 bg-white border border-indigo-200 shadow-lg rounded-2xl p-3.5 max-w-xs flex items-center gap-3">
+    <div class="text-xl">⏰</div>
+    <div class="flex-1">
+      <div class="text-xs font-semibold text-slate-800">Görüşme hatırlatıcılarını aç (30 dk önce bildirim)</div>
+      <div id="reminderStatus" class="text-[11px] text-slate-500">Kapalı</div>
+    </div>
+    <button id="toggleReminderBtn" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700">Aç</button>
+  </div>
+
+  <!-- Genel Modal -->
+  <div id="appModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-5 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <h3 id="modalTitle" class="text-base font-bold text-slate-900"></h3>
+        <button id="closeModalBtn" class="text-slate-400 hover:text-slate-700 text-lg font-bold">✕</button>
+      </div>
+      <div id="modalBody"></div>
+    </div>  <script>
+    const STORE_KEY = 'adimplan_coach_panel_v1';
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    const DEFAULT_STATE = {
+      activePage: 'home',
+      selectedStudentId: null,
+      studentDetailTab: 'overview',
+      studentArchiveFilter: 'active',
+      studentRiskFilter: 'all',
+      studentSearch: '',
+      dailyDate: new Date().toISOString().slice(0, 10),
+      topicStudentId: 's1',
+      topicExamGroup: 'YKS',
+      libraryTab: 'YKS',
+      generalReportTab: 'general',
+      weeklyReportTab: 'pending',
+      paymentFilter: 'all',
+      reminderOn: false,
+      widgets: { activity: true, metrics: true, promo: true, calendar: true, quick: true, sessions: true, stars: true, notes: true, recent: true },
+      profile: { name: 'Uzm. Koç Ahmet Yılmaz', title: 'Baş Koç', institution: 'Adimplan Akademi', notifySession: true, notifyReport: true },
+      notifications: [
+        { id: 'n1', text: 'Ayşe Yılmaz 2 deneme sonucu yükledi.', time: '10 dk önce', unread: true },
+        { id: 'n2', text: 'Bugün saat 15:00 görüşmeniz var.', time: '1 saat önce', unread: true },
+        { id: 'n3', text: 'Mehmet Demir haftalık görevini tamamladı.', time: '3 saat önce', unread: true }
+      ],
+      students: [
+        { id: 's1', name: 'Ayşe Yılmaz', grade: '12. Sınıf', exam: 'YKS', target: 'İTÜ Bilgisayar Müh.', daysLeft: 198, progress: 78, weeklyTasksDone: 14, weeklyTasksTotal: 16, attendance: 95, risk: 'none', status: 'active', sessionsTotal: 12, sessionsUsed: 7, siteMinutes: 420, pomodoroToday: 90, pomodoroWeek: 540, pomodoroTotal: 4200, schoolNotes: 'Matematik 92, Fizik 88', wrongTopics: ['Türev - Ekstremum (4 Yanlış)', 'Optik - Kırılma (3 Yanlış)'], testLogs: ['3D AYT Mat Test 4: 18D 2Y', 'Bilgi Sarmal Fizik: 15D 1Y'], mockExams: [{ name: 'Özdebir TYT-3', net: 94.5, date: '2026-11-20' }, { name: 'Töder AYT-1', net: 62.25, date: '2026-11-25' }], coachNotes: ['Deneme süre yönetimi harika ilerliyor.'], aiTasks: ['Türev 20 soru pekiştirme', 'Optik konu tekrarı'], flashcards: '32 kart tekrar edildi • Son hareket: 2 saat önce' },
+        { id: 's2', name: 'Mehmet Demir', grade: '8. Sınıf', exam: 'LGS', target: 'İstanbul Erkek Lisesi', daysLeft: 190, progress: 54, weeklyTasksDone: 7, weeklyTasksTotal: 14, attendance: 72, risk: 'risky', status: 'active', sessionsTotal: 8, sessionsUsed: 8, siteMinutes: 165, pomodoroToday: 25, pomodoroWeek: 180, pomodoroTotal: 1450, schoolNotes: 'Matematik 74, Fen 80', wrongTopics: ['Üslü İfadeler (6 Yanlış)', 'Basınç (4 Yanlış)'], testLogs: ['Sinan Kuzucu LGS Mat: 12D 6Y'], mockExams: [{ name: 'Nartest LGS-2', net: 68.0, date: '2026-11-18' }], coachNotes: ['Seans paketi yenilenmeli, motivasyon görüşmesi planlandı.'], aiTasks: ['Üslü sayılar temel kampı', 'Günlük 15 paragraf'], flashcards: '14 kart • Son hareket: 2 gün önce' },
+        { id: 's3', name: 'Zeynep Kaya', grade: 'Mezun', exam: 'KPSS', target: 'KPSS P3 90+', daysLeft: 215, progress: 66, weeklyTasksDone: 10, weeklyTasksTotal: 12, attendance: 88, risk: 'medium', status: 'active', sessionsTotal: 10, sessionsUsed: 4, siteMinutes: 310, pomodoroToday: 50, pomodoroWeek: 390, pomodoroTotal: 2800, schoolNotes: 'Lisans Mezunu', wrongTopics: ['Tarih - Islahatlar (3 Yanlış)'], testLogs: ['Pegem Tarih Tarama: 22D 3Y'], mockExams: [{ name: 'Yediiklim TG-1', net: 86.5, date: '2026-11-22' }], coachNotes: ['Vatandaşlık tekrarları artırılmalı.'], aiTasks: ['Osmanlı Kültür Medeniyet özet'], flashcards: '20 kart • Son hareket: Bugün' },
+        { id: 's4', name: 'Can Öztürk', grade: '12. Sınıf', exam: 'YKS', target: 'ODTÜ İşletme', daysLeft: 198, progress: 84, weeklyTasksDone: 15, weeklyTasksTotal: 15, attendance: 98, risk: 'none', status: 'active', sessionsTotal: 16, sessionsUsed: 6, siteMinutes: 510, pomodoroToday: 120, pomodoroWeek: 660, pomodoroTotal: 5100, schoolNotes: 'Matematik 95, Edebiyat 90', wrongTopics: ['Paragraf - Anlam (2 Yanlış)'], testLogs: ['Limit Edebiyat: 23D 1Y'], mockExams: [{ name: 'Apotemi TYT-2', net: 99.0, date: '2026-11-24' }], coachNotes: ['Haftanın yıldızı adayı.'], aiTasks: ['AYT Edebiyat Divan Şiiri'], flashcards: '45 kart • Son hareket: 1 saat önce' },
+        { id: 's5', name: 'Elif Aydın', grade: 'Ön Lisans', exam: 'DGS', target: 'İTÜ Mimarlık', daysLeft: 230, progress: 40, weeklyTasksDone: 4, weeklyTasksTotal: 10, attendance: 60, risk: 'risky', status: 'archived', sessionsTotal: 4, sessionsUsed: 4, siteMinutes: 90, pomodoroToday: 0, pomodoroWeek: 60, pomodoroTotal: 780, schoolNotes: 'GANO 3.15', wrongTopics: ['Problemler (5 Yanlış)'], testLogs: ['Tasarı DGS Mat: 28D 8Y'], mockExams: [{ name: 'Tasarı DGS-1', net: 54.0, date: '2026-11-10' }], coachNotes: ['Dönem arası dondurdu.'], aiTasks: ['Sayısal mantık başlangıç'], flashcards: '8 kart • Son hareket: 9 gün önce' }
+      ],
+      sessions: [
+        { id: 'ses1', studentId: 's1', studentName: 'Ayşe Yılmaz', time: '14:00', date: new Date().toISOString().slice(0, 10), topic: 'AYT Deneme Analizi', status: 'Planlandı' },
+        { id: 'ses2', studentId: 's2', studentName: 'Mehmet Demir', time: '15:30', date: new Date().toISOString().slice(0, 10), topic: 'Motivasyon & Haftalık Hedef', status: 'Planlandı' },
+        { id: 'ses3', studentId: 's4', studentName: 'Can Öztürk', time: '17:00', date: new Date().toISOString().slice(0, 10), topic: 'TYT Hızlandırma Stratejisi', status: 'Tamamlandı' }
+      ],
+      notes: [
+        { id: 'nt1', text: 'Mehmet Demir velisi ile seans yenileme görüşmesi yapılacak.', date: '27.11.2026' },
+        { id: 'nt2', text: 'Aralık ayı TYT genel deneme takvimi paylaşılacak.', date: '27.11.2026' }
+      ],
+      activities: [
+        'Ayşe Yılmaz "Töder AYT-1" deneme sonucunu (62.25 net) sisteme girdi.',
+        'Can Öztürk haftalık 15/15 görevini %100 tamamladı.',
+        'Mehmet Demir için AI Eksik Kapatma planı oluşturuldu.'
+      ],
+      calendarEvents: [
+        { day: 5, type: 'gorev', label: 'Haftalık Görev Kontrolü' },
+        { day: 12, type: 'gorusme', label: 'Veli Bilgilendirme' },
+        { day: 18, type: 'etkinlik', label: 'Motivasyon Semineri' },
+        { day: 24, type: 'sinav', label: 'Türkiye Geneli Deneme' },
+        { day: 29, type: 'tatil', label: 'Dinlenme Günü' }
+      ],
+      dailyTasks: [
+        { id: 'dt1', title: 'Ayşe Yılmaz - Türev 30 Soru', done: true },
+        { id: 'dt2', title: 'Mehmet Demir - Paragraf 20 Soru', done: false },
+        { id: 'dt3', title: 'Zeynep Kaya - Tarih Tekrarı', done: true }
+      ],
+      dailyCoachNote: 'Öğrencilerin deneme sonrası yanlış defterlerini kontrol et.',
+      topicsByExam: {
+        'YKS': [
+          { name: 'TYT Türkçe - Sözcükte Anlam', done: true },
+          { name: 'TYT Matematik - Problemler', done: true },
+          { name: 'AYT Matematik - Türev', done: false },
+          { name: 'AYT Fizik - Optik', done: false }
+        ],
+        'LGS': [
+          { name: 'Matematik - Çarpanlar ve Katlar', done: true },
+          { name: 'Matematik - Üslü İfadeler', done: false },
+          { name: 'Fen Bilimleri - Mevsimler ve İklim', done: true }
+        ],
+        'KPSS': [
+          { name: 'Tarih - Osmanlı Kültür ve Medeniyet', done: false },
+          { name: 'Coğrafya - Türkiye İklimi', done: true }
+        ],
+        'MEBAGS/ÖABT': [{ name: 'Alan Eğitimi - Öğretim Yöntemleri', done: true }, { name: 'Alan Bilgisi - Temel Kavramlar', done: false }],
+        'ALES': [{ name: 'Sayısal Mantık - Grafik Yorumlama', done: true }, { name: 'Sözel Mantık - Sıralama', done: false }],
+        'DGS': [{ name: 'Temel Kavramlar', done: true }, { name: 'Sayısal Mantık', done: false }],
+        'TUS': [{ name: 'Anatomi - Kas İskelet', done: true }, { name: 'Fizyoloji - Kardiyovasküler', done: false }],
+        'YDS': [{ name: 'Grammar - Tenses & Modals', done: true }, { name: 'Reading Comprehension', done: false }]
+      },
+      goals: [
+        { id: 'g1', studentName: 'Ayşe Yılmaz', exam: 'YKS', targetScore: '510 Puan', currentScore: '465 Puan', percent: 82 },
+        { id: 'g2', studentName: 'Mehmet Demir', exam: 'LGS', targetScore: '480 Puan', currentScore: '410 Puan', percent: 68 }
+      ],
+      resources: [
+        { id: 'r1', studentName: 'Ayşe Yılmaz', book: '3D Yayınları AYT Matematik', progress: '180 / 240 sayfa' },
+        { id: 'r2', studentName: 'Can Öztürk', book: 'Apotemi Problemler', progress: '140 / 160 sayfa' }
+      ],
+      library: {
+        customTopics: ['Hızlı Okuma Teknikleri', 'Sınav Kaygısı Yönetimi'],
+        books: {
+          'LGS': ['Okyanus Master Matematik', 'Nartest Fen Bilimleri'],
+          '6–12. Sınıf': ['Çap 11. Sınıf Fizik Fasikülleri'],
+          'YKS': ['3D AYT Matematik', 'Bilgi Sarmal TYT Türkçe', 'Orbital AYT Kimya'],
+          'KPSS Lisans': ['Pegem Genel Yetenek Genel Kültür'],
+          'KPSS Ön Lisans': ['Yediiklim Ön Lisans Tamamı Çözümlü'],
+          'KPSS Orta Öğ.': ['Benim Hocam Ortaöğretim Tarih'],
+          'ALES': ['Tasarı ALES Sayısal Mantık'],
+          'DGS': ['Yargı DGS 10 Deneme'],
+          'YDS': ['Modadil YDS Kelime Canavarı'],
+          'TUS': ['Tusem Dahiliye Konu Kitabı']
+        }
+      },
+      generalReports: {
+        generalExams: [
+          { name: 'Özdebir TYT-3', avgNet: 88.4, topStudent: 'Can Öztürk (99.0)' },
+          { name: 'Töder AYT-1', avgNet: 58.2, topStudent: 'Ayşe Yılmaz (62.25)' }
+        ],
+        branchExams: [
+          { name: 'Bilgi Sarmal Mat Branş #4', avgNet: 31.5, topStudent: 'Can Öztürk (36.0)' }
+        ],
+        questionTracking: [
+          { student: 'Ayşe Yılmaz', weekly: 640, monthly: 2450 },
+          { student: 'Can Öztürk', weekly: 710, monthly: 2800 },
+          { student: 'Mehmet Demir', weekly: 320, monthly: 1180 }
+        ],
+        adminNote: 'Kasım sonu itibarıyla YKS grubunda AYT ağırlığı %60 seviyesine çıkarılmalıdır.'
+      },
+      weeklyReports: [
+        { id: 'wr1', studentName: 'Ayşe Yılmaz', week: '20-26 Kasım 2026', summary: '14/16 görev, 94.5 TYT neti', status: 'pending' },
+        { id: 'wr2', studentName: 'Can Öztürk', week: '20-26 Kasım 2026', summary: '15/15 görev, 99.0 TYT neti', status: 'approved' },
+        { id: 'wr3', studentName: 'Zeynep Kaya', week: '13-19 Kasım 2026', summary: '10/12 görev, 86.5 KPSS neti', status: 'sent' }
+      ],
+      optic: {
+        keyFileName: '',
+        photoFileName: '',
+        keyAnswers: ['A','C','B','D','E','A','B','D','C','E','A','B','C','D','A','E','B','C','D','A'],
+        studentAnswers: ['A','C','B','D','-','A','D','D','C','E','A','B','C','A','A','E','B','-','D','A']
+      },
+      updates: [
+        { id: 'u1', type: 'Yeni', title: 'Fotoğraftan Optik Okuma v2', desc: 'XLSX cevap anahtarı yükleyip optik form üzerinden etkileşimli net hesabı yapın.', guide: '1) Analiz & Rapor > Fotoğraftan Optik sekmesine girin. 2) Adım 1 ile .xlsx anahtarı seçin. 3) Adım 2 ile optik fotoğrafı yükleyip ızgaradan şıkları düzeltin.' },
+        { id: 'u2', type: 'İyileştirme', title: 'AI Eksik Kapatma Merkezi', desc: 'Yanlış konulara göre öğrenci detayında otomatik görev önerileri.', guide: 'Öğrenci Detay > Genel Bakış içindeki AI Eksik Kapatma Merkezi kartından tek tıkla görev atayın.' }
+      ]
+    };
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORE_KEY);
+        if (!raw) return structuredClone(DEFAULT_STATE);
+        const parsed = JSON.parse(raw);
+        return Object.assign(structuredClone(DEFAULT_STATE), parsed);
+      } catch (e) {
+        return structuredClone(DEFAULT_STATE);
+      }
+    }
+
+    let state = loadState();
+    function saveState() {
+      try {
+        const safeCopy = structuredClone(state);
+        if (safeCopy.profile) {
+          delete safeCopy.profile.email;
+          delete safeCopy.profile.password;
+        }
+        localStorage.setItem(STORE_KEY, JSON.stringify(safeCopy));
+      } catch (e) {}
+    }
+  </script>
+  </div>
+  <script>
+    const NAV_GROUPS = [
+      { title: 'Ana Sayfa', items: [{ id: 'home', label: 'Ana Sayfa', icon: '🏠' }] },
+      { title: 'Program', items: [
+        { id: 'weekly-program', label: 'Haftalık Program', icon: '📅' },
+        { id: 'daily-program', label: 'Günlük Program', icon: '🗓️' },
+        { id: 'meetings', label: 'Görüşmeler', icon: '🎥' }
+      ]},
+      { title: 'Öğrenci Takibi', items: [
+        { id: 'students', label: 'Öğrenciler', icon: '👥' },
+        { id: 'topics', label: 'Konu Takibi', icon: '📚' },
+        { id: 'goals', label: 'Hedefler', icon: '🎯' },
+        { id: 'resources', label: 'Kaynaklar', icon: '📖' },
+        { id: 'library', label: 'Kaynak Kütüphanem', icon: '🏛️' }
+      ]},
+      { title: 'Analiz & Rapor', items: [
+        { id: 'exam-analytics', label: 'Deneme Analitiği', icon: '📊' },
+        { id: 'wrong-analysis', label: 'Yanlış Analizi', icon: '🔍' },
+        { id: 'optic-reader', label: 'Fotoğraftan Optik', icon: '📷' },
+        { id: 'general-reports', label: 'Genel Raporlar', icon: '📑' },
+        { id: 'weekly-reports', label: 'Haftalık Raporlar', icon: '📝' }
+      ]},
+      { title: 'İşletme', items: [
+        { id: 'payments', label: 'Ödeme Takibi', icon: '💳' },
+        { id: 'updates', label: 'Yenilikler', icon: '✨' },
+        { id: 'profile', label: 'Profil', icon: '👤' }
+      ]}
+    ];
+
+    function openModal(title, html) {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalBody').innerHTML = html;
+      document.getElementById('appModal').classList.remove('hidden');
+    }
+    function closeModal() {
+      document.getElementById('appModal').classList.add('hidden');
+    }
+    document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+    document.getElementById('appModal').addEventListener('click', (e) => {
+      if (e.target.id === 'appModal') closeModal();
+    });
+
+    document.getElementById('openPlanModalBtn').addEventListener('click', () => {
+      openModal('Plan Seç', `
+        <div class="space-y-3 text-sm">
+          <div class="p-3 border rounded-xl hover:border-indigo-500 cursor-pointer" data-plan="Başlangıç">
+            <div class="font-bold">Başlangıç Paketi — ₺990/ay</div>
+            <div class="text-xs text-slate-500">15 öğrenciye kadar tam takip, haftalık raporlar.</div>
+          </div>
+          <div class="p-3 border-2 border-indigo-600 bg-indigo-50/40 rounded-xl cursor-pointer" data-plan="Pro">
+            <div class="font-bold text-indigo-700">Pro Koçluk — ₺1.890/ay (Önerilen)</div>
+            <div class="text-xs text-slate-600">50 öğrenci, Fotoğraftan Optik, AI Eksik Kapatma.</div>
+          </div>
+          <div class="p-3 border rounded-xl hover:border-indigo-500 cursor-pointer" data-plan="Kurumsal">
+            <div class="font-bold">Kurumsal Akademi — ₺3.490/ay</div>
+            <div class="text-xs text-slate-500">Sınırsız öğrenci, çoklu koç yönetimi.</div>
+          </div>
+          <button id="confirmPlanBtn" class="w-full py-2 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700">Seçili Planı Onayla</button>
+        </div>
+      `);
+      document.getElementById('confirmPlanBtn').addEventListener('click', () => {
+        closeModal();
+        alert('Pro Koçluk planı seçildi (Demo).');
+      });
+    });
+
+    document.getElementById('notifBellBtn').addEventListener('click', () => {
+      const pop = document.getElementById('notifPopover');
+      pop.classList.toggle('hidden');
+      renderNotifications();
+    });
+    function renderNotifications() {
+      const pop = document.getElementById('notifPopover');
+      const unread = state.notifications.filter(n => n.unread).length;
+      document.getElementById('notifBadge').textContent = String(unread);
+      pop.innerHTML = '<div class="flex justify-between items-center font-bold text-slate-800 pb-1 border-b"><span>Bildirimler</span><button id="markAllReadBtn" class="text-[11px] text-indigo-600">Tümünü okundu say</button></div>' +
+        state.notifications.map(n => `<div class="p-2 rounded-lg ${n.unread ? 'bg-indigo-50' : 'bg-slate-50'}"><div class="text-slate-800">${escapeHtml(n.text)}</div><div class="text-[10px] text-slate-400 mt-0.5">${escapeHtml(n.time)}</div></div>`).join('');
+      const btn = document.getElementById('markAllReadBtn');
+      if (btn) btn.addEventListener('click', () => {
+        state.notifications.forEach(n => n.unread = false);
+        saveState();
+        renderNotifications();
+      });
+    }
+
+    function updateReminderUI() {
+      document.getElementById('reminderStatus').textContent = state.reminderOn ? 'Açık (30 dk önce bildirim)' : 'Kapalı';
+      document.getElementById('toggleReminderBtn').textContent = state.reminderOn ? 'Kapat' : 'Aç';
+    }
+    document.getElementById('toggleReminderBtn').addEventListener('click', () => {
+      state.reminderOn = !state.reminderOn;
+      saveState();
+      updateReminderUI();
+    });
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      alert('Güvenli çıkış simülasyonu tamamlandı.');
+    });
+
+    function renderSidebar() {
+      document.getElementById('sidebarCoachName').textContent = state.profile.name || 'Koç Paneli';
+      document.getElementById('sidebarCoachRole').textContent = `${state.profile.title || 'Baş Koç'} • Aktif`;
+      const nav = document.getElementById('sidebarNav');
+      nav.innerHTML = NAV_GROUPS.map(g => `
+        <div>
+          <div class="px-2 mb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">${escapeHtml(g.title)}</div>
+          <div class="space-y-0.5">
+            ${g.items.map(it => `
+              <button data-nav="${escapeHtml(it.id)}" class="nav-item w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-left text-slate-700 hover:bg-slate-100 transition ${state.activePage === it.id ? 'active' : ''}">
+                <span>${it.icon}</span><span>${escapeHtml(it.label)}</span>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+      nav.querySelectorAll('[data-nav]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.activePage = btn.getAttribute('data-nav');
+          state.selectedStudentId = null;
+          saveState();
+          renderAll();
+        });
+      });
+    }
+
+    function renderCalendarCard() {
+      const colors = { gorev: 'bg-indigo-500', gorusme: 'bg-emerald-500', etkinlik: 'bg-amber-500', sinav: 'bg-rose-500', tatil: 'bg-sky-500' };
+      const days = Array.from({ length: 30 }, (_, i) => i + 1);
+      return `
+        <div class="bg-white border border-slate-200 rounded-2xl p-4">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <h3 class="font-bold text-slate-900 text-sm">Aylık Takvim — Kasım 2026</h3>
+            <div class="flex flex-wrap gap-3 text-[11px] text-slate-600">
+              <span class="flex items-center gap-1"><span class="cal-dot bg-indigo-500"></span>Görev</span>
+              <span class="flex items-center gap-1"><span class="cal-dot bg-emerald-500"></span>Görüşme</span>
+              <span class="flex items-center gap-1"><span class="cal-dot bg-amber-500"></span>Etkinlik</span>
+              <span class="flex items-center gap-1"><span class="cal-dot bg-rose-500"></span>Sınav</span>
+              <span class="flex items-center gap-1"><span class="cal-dot bg-sky-500"></span>Tatil</span>
+            </div>
+          </div>
+          <div class="grid grid-cols-7 gap-1.5 text-center text-xs">
+            ${['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].map(d => `<div class="font-semibold text-slate-400 py-1">${d}</div>`).join('')}
+            ${days.map(d => {
+              const ev = state.calendarEvents.find(e => e.day === d);
+              return `<div class="p-1.5 rounded-lg border ${d === 27 ? 'border-indigo-500 bg-indigo-50 font-bold' : 'border-slate-100'} min-h-[42px] flex flex-col items-center justify-between" title="${ev ? escapeHtml(ev.label) : ''}">
+                <span>${d}</span>
+                ${ev ? `<span class="cal-dot ${colors[ev.type] || 'bg-slate-400'}"></span>` : '<span class="h-[7px]"></span>'}
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderHome() {
+      const activeStudents = state.students.filter(s => s.status === 'active');
+      const riskyCount = activeStudents.filter(s => s.risk === 'risky').length;
+      const pendingCount = state.weeklyReports.filter(r => r.status === 'pending').length;
+      const stars = [...activeStudents].sort((a, b) => b.progress - a.progress).slice(0, 3);
+      const w = state.widgets;
+      return `
+        <div class="space-y-5">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h1 class="text-xl font-extrabold text-slate-900">Ana Sayfa</h1>
+              <p class="text-xs text-slate-500">Koçluk operasyon özetiniz ve günlük aksiyonlarınız</p>
+            </div>
+            <button id="customizeWidgetsBtn" class="px-3 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-xs font-semibold">⚙️ Özelleştir</button>
+          </div>
+
+          ${w.activity ? `<div class="bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+            <div><div class="text-xs uppercase tracking-wider opacity-80 font-semibold">Günlük Aktivite Kartı</div><div class="text-base font-bold mt-0.5">Bugün ${state.sessions.length} görüşme, ${activeStudents.length} aktif öğrenci takipte.</div></div>
+            <span class="bg-white/20 px-3 py-1 rounded-full text-xs font-semibold">Canlı Senkron</span>
+          </div>` : ''}
+
+          ${w.metrics ? `<div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="bg-white border border-slate-200 rounded-2xl p-4"><div class="text-[11px] font-bold text-slate-400">ÖĞRENCİ</div><div class="text-2xl font-extrabold mt-1">${state.students.length}</div></div>
+            <div class="bg-white border border-slate-200 rounded-2xl p-4"><div class="text-[11px] font-bold text-amber-500">BEKLEYEN</div><div class="text-2xl font-extrabold mt-1">${pendingCount}</div></div>
+            <div class="bg-white border border-slate-200 rounded-2xl p-4"><div class="text-[11px] font-bold text-emerald-600">AKTİF</div><div class="text-2xl font-extrabold mt-1">${activeStudents.length}</div></div>
+            <div class="bg-white border border-slate-200 rounded-2xl p-4"><div class="text-[11px] font-bold text-rose-600">RİSK ALTINDA</div><div class="text-2xl font-extrabold mt-1">${riskyCount}</div></div>
+          </div>` : ''}
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            ${w.promo ? `<div class="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between">
+              <div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">3 DK TANITIM</span>
+                <h3 class="font-bold text-slate-900 mt-2">Adimplan Koç Paneli Rehberi</h3>
+                <p class="text-xs text-slate-500 mt-1">Öğrenci ekleme, optik okuma ve haftalık rapor onayını 3 dakikada öğrenin.</p>
+              </div>
+              <button id="watchIntroBtn" class="mt-3 px-3 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 w-fit">▶ Videoyu izle</button>
+            </div>` : ''}
+
+            ${w.quick ? `<div class="bg-white border border-slate-200 rounded-2xl p-4 lg:col-span-2">
+              <h3 class="font-bold text-slate-900 text-sm mb-3">Hızlı İşlemler</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <button id="quickAddSessionBtn" class="p-3 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 font-semibold text-xs hover:bg-indigo-100">+ Görüşme oluştur</button>
+                <button id="quickBulkMsgBtn" class="p-3 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold text-xs hover:bg-emerald-100">+ Toplu mesaj gönder</button>
+                <button id="quickWeeklyReportBtn" class="p-3 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 font-semibold text-xs hover:bg-amber-100">+ Haftalık rapor hazırla</button>
+              </div>
+            </div>` : ''}
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="lg:col-span-2 space-y-4">
+              ${w.calendar ? renderCalendarCard() : ''}
+              ${w.notes ? `<div class="bg-white border border-slate-200 rounded-2xl p-4">
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="font-bold text-slate-900 text-sm">Not Tablosu</h3>
+                  <button id="addNoteBtn" class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white text-xs font-semibold">Ekle</button>
+                </div>
+                <div class="space-y-2">
+                  ${state.notes.map(n => `<div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 text-xs"><span>${escapeHtml(n.text)}</span><span class="text-slate-400 shrink-0 ml-2">${escapeHtml(n.date)}</span></div>`).join('')}
+                </div>
+              </div>` : ''}
+            </div>
+
+            <div class="space-y-4">
+              ${w.sessions ? `<div class="bg-white border border-slate-200 rounded-2xl p-4">
+                <h3 class="font-bold text-slate-900 text-sm mb-3">Bugünkü Seanslar</h3>
+                <div class="space-y-2">
+                  ${state.sessions.map(s => `<div class="p-2.5 rounded-xl border border-slate-100 text-xs flex justify-between items-center"><div><div class="font-bold">${escapeHtml(s.studentName)}</div><div class="text-slate-500">${escapeHtml(s.topic)}</div></div><span class="font-semibold text-indigo-600">${escapeHtml(s.time)}</span></div>`).join('')}
+                </div>
+              </div>` : ''}
+
+              ${w.stars ? `<div class="bg-white border border-slate-200 rounded-2xl p-4">
+                <h3 class="font-bold text-slate-900 text-sm mb-3">Haftanın Yıldızları (İlk 3)</h3>
+                <div class="space-y-2">
+                  ${stars.map((st, idx) => `<div class="p-2.5 rounded-xl bg-amber-50/70 border border-amber-100 flex items-center justify-between text-xs"><span class="font-bold">${idx + 1}. ${escapeHtml(st.name)}</span><span class="font-bold text-amber-700">%${st.progress}</span></div>`).join('')}
+                </div>
+              </div>` : ''}
+
+              ${w.recent ? `<div class="bg-white border border-slate-200 rounded-2xl p-4">
+                <h3 class="font-bold text-slate-900 text-sm mb-3">Son Aktiviteler</h3>
+                <ul class="space-y-2 text-xs text-slate-600 list-disc pl-4">
+                  ${state.activities.map(a => `<li>${escapeHtml(a)}</li>`).join('')}
+                </ul>
+              </div>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderWeeklyProgram() {
+      return `
+        <div class="space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div><h1 class="text-xl font-extrabold">Haftalık Program</h1><p class="text-xs text-slate-500">Haftalık ders ve görev dağılımı özeti</p></div>
+            <a href="./program.html" class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700">Tam Haftalık Programa Geç (./program.html) →</a>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-2xl p-4">
+            <h3 class="font-bold text-sm mb-3">Hızlı Özet</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              <div class="p-3 rounded-xl bg-slate-50"><div class="font-bold text-slate-800">Toplam Planlanan Görev</div><div class="text-xl font-extrabold text-indigo-600 mt-1">57 Görev</div></div>
+              <div class="p-3 rounded-xl bg-slate-50"><div class="font-bold text-slate-800">Ortalama Tamamlama</div><div class="text-xl font-extrabold text-emerald-600 mt-1">%81</div></div>
+              <div class="p-3 rounded-xl bg-slate-50"><div class="font-bold text-slate-800">Aktif Öğrenci Programı</div><div class="text-xl font-extrabold text-slate-900 mt-1">${state.students.filter(s => s.status === 'active').length} Öğrenci</div></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderDailyProgram() {
+      const days = ['PZT','SAL','ÇAR','PER','CUM','CMT','PAZ'];
+      const doneCount = state.dailyTasks.filter(t => t.done).length;
+      return `
+        <div class="space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <h1 class="text-xl font-extrabold">Günlük Program</h1>
+            <input id="dailyDatePicker" type="date" value="${escapeHtml(state.dailyDate)}" class="px-3 py-1.5 rounded-xl border border-slate-300 text-xs bg-white" />
+          </div>
+          <div class="flex gap-2 overflow-x-auto pb-1">
+            ${days.map((d, i) => `<button class="px-4 py-2 rounded-xl text-xs font-bold border ${i === 4 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-200'}">${d}</button>`).join('')}
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div class="bg-white border border-slate-200 rounded-2xl p-4"><div class="text-[11px] font-bold text-slate-400">ÇALIŞMA SÜRESİ (POMODORO)</div><div class="text-2xl font-extrabold text-indigo-600 mt-1">285 dk</div></div>
+            <div class="bg-white border border-slate-200 rounded-2xl p-4"><div class="text-[11px] font-bold text-slate-400">GÖREVLER</div><div class="text-2xl font-extrabold text-emerald-600 mt-1">${doneCount} / ${state.dailyTasks.length}</div></div>
+            <div class="bg-white border border-slate-200 rounded-2xl p-4"><div class="text-[11px] font-bold text-slate-400">KOÇ NOTU</div><div class="text-xs text-slate-700 mt-1">${escapeHtml(state.dailyCoachNote)}</div></div>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-2xl p-4 space-y-2">
+            <h3 class="font-bold text-sm">Günün Görevleri</h3>
+            ${state.dailyTasks.map(t => `
+              <label class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 text-xs cursor-pointer">
+                <input type="checkbox" data-toggle-task="${escapeHtml(t.id)}" ${t.done ? 'checked' : ''} class="rounded text-indigo-600" />
+                <span class="${t.done ? 'line-through text-slate-400' : 'text-slate-800 font-medium'}">${escapeHtml(t.title)}</span>
+              </label>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderMeetings() {
+      const done = state.sessions.filter(s => s.status === 'Tamamlandı').length;
+      const planned = state.sessions.filter(s => s.status === 'Planlandı').length;
+      return `
+        <div class="space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2"><h1 class="text-xl font-extrabold">Görüşmeler</h1><span class="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold">Bu Hafta</span></div>
+            <button id="addMeetingBtn" class="px-3.5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700">+ Görüşme Ekle</button>
+          </div>
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="bg-white border rounded-2xl p-4"><div class="text-[11px] font-bold text-slate-400">TOPLAM GÖRÜŞME</div><div class="text-2xl font-extrabold mt-1">${state.sessions.length}</div></div>
+            <div class="bg-white border rounded-2xl p-4"><div class="text-[11px] font-bold text-emerald-600">TAMAMLANAN</div><div class="text-2xl font-extrabold mt-1">${done}</div></div>
+            <div class="bg-white border rounded-2xl p-4"><div class="text-[11px] font-bold text-indigo-600">PLANLANAN</div><div class="text-2xl font-extrabold mt-1">${planned}</div></div>
+            <div class="bg-white border rounded-2xl p-4"><div class="text-[11px] font-bold text-rose-500">İPTAL / BEKLEYEN</div><div class="text-2xl font-extrabold mt-1">0</div></div>
+          </div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            ${renderCalendarCard()}
+            <div class="space-y-4">
+              <div class="bg-white border rounded-2xl p-4"><h3 class="font-bold text-sm mb-2">Bugünün Seansları</h3>${state.sessions.map(s => `<div class="py-2 border-b last:border-0 text-xs flex justify-between"><span><b>${escapeHtml(s.studentName)}</b> — ${escapeHtml(s.topic)}</span><span class="text-indigo-600 font-semibold">${escapeHtml(s.time)}</span></div>`).join('')}</div>
+              <div class="bg-white border rounded-2xl p-4"><h3 class="font-bold text-sm mb-2">Haftalık Tüm Seanslar</h3>${state.sessions.map(s => `<div class="py-2 border-b last:border-0 text-xs flex justify-between"><span>${escapeHtml(s.date)} ${escapeHtml(s.time)} • ${escapeHtml(s.studentName)}</span><span class="px-2 py-0.5 rounded-full bg-slate-100">${escapeHtml(s.status)}</span></div>`).join('')}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    function renderStudents() {
+      if (state.selectedStudentId) return renderStudentDetail();
+      const q = (state.studentSearch || '').toLowerCase();
+      const list = state.students.filter(s => {
+        if (s.status !== state.studentArchiveFilter) return false;
+        if (state.studentRiskFilter === 'risky' && s.risk !== 'risky') return false;
+        if (state.studentRiskFilter === 'medium' && s.risk !== 'medium') return false;
+        if (state.studentRiskFilter === 'passive' && s.attendance >= 75) return false;
+        if (q && !s.name.toLowerCase().includes(q) && !s.exam.toLowerCase().includes(q)) return false;
+        return true;
+      });
+      const riskBadge = { none: 'bg-emerald-100 text-emerald-700', medium: 'bg-amber-100 text-amber-700', risky: 'bg-rose-100 text-rose-700' };
+      const riskLabel = { none: 'Risk Yok', medium: 'Orta Riskli', risky: 'Riskli' };
+      return `
+        <div class="space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <h1 class="text-xl font-extrabold">Öğrenciler</h1>
+            <button id="addStudentBtn" class="px-3.5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700">+ Öğrenci Ekle</button>
+          </div>
+          <div class="flex flex-wrap items-center justify-between gap-3 bg-white border rounded-2xl p-3">
+            <div class="flex gap-1.5">
+              <button data-arch="active" class="tab-btn px-3 py-1.5 rounded-xl text-xs font-semibold ${state.studentArchiveFilter === 'active' ? 'active' : 'bg-slate-100 text-slate-700'}">Aktif</button>
+              <button data-arch="archived" class="tab-btn px-3 py-1.5 rounded-xl text-xs font-semibold ${state.studentArchiveFilter === 'archived' ? 'active' : 'bg-slate-100 text-slate-700'}">Arşiv</button>
+            </div>
+            <input id="studentSearchInput" type="text" value="${escapeHtml(state.studentSearch)}" placeholder="Öğrenci veya sınav ara..." class="px-3 py-1.5 rounded-xl border border-slate-300 text-xs w-56" />
+            <div class="flex flex-wrap gap-1.5">
+              ${[['all','Tümü'],['risky','Riskli'],['medium','Orta Riskli'],['passive','Pasif']].map(([k, lbl]) => `
+                <button data-risk="${k}" class="px-2.5 py-1.5 rounded-xl text-xs font-semibold ${state.studentRiskFilter === k ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'}">${lbl}</button>
+              `).join('')}
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            ${list.map(st => `
+              <div class="bg-white border border-slate-200 rounded-2xl p-4 space-y-3">
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <div class="font-bold text-slate-900">${escapeHtml(st.name)}</div>
+                    <div class="text-xs text-slate-500">${escapeHtml(st.grade)} • ${escapeHtml(st.exam)} • ${escapeHtml(st.target)}</div>
+                  </div>
+                  <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${riskBadge[st.risk] || ''}">${riskLabel[st.risk] || 'Risk Yok'}</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center text-xs bg-slate-50 rounded-xl p-2">
+                  <div><div class="text-slate-400 text-[10px]">İLERLEME</div><div class="font-bold">%${st.progress}</div></div>
+                  <div><div class="text-slate-400 text-[10px]">GÖREV</div><div class="font-bold">${st.weeklyTasksDone}/${st.weeklyTasksTotal}</div></div>
+                  <div><div class="text-slate-400 text-[10px]">SEANS</div><div class="font-bold">${st.sessionsUsed}/${st.sessionsTotal}</div></div>
+                </div>
+                <div class="flex flex-wrap gap-1.5 pt-1">
+                  <button data-st-act="msg" data-id="${escapeHtml(st.id)}" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold">Mesaj</button>
+                  <button data-st-act="task" data-id="${escapeHtml(st.id)}" class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs font-semibold">Görev</button>
+                  <button data-st-act="report" data-id="${escapeHtml(st.id)}" class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-semibold">Rapor</button>
+                  <button data-st-act="detail" data-id="${escapeHtml(st.id)}" class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-xs font-semibold">Detay</button>
+                  <button data-st-act="archive" data-id="${escapeHtml(st.id)}" class="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 text-xs font-semibold">${st.status === 'active' ? 'Arşivle' : 'Aktife Al'}</button>
+                </div>
+              </div>
+            `).join('') || '<div class="col-span-2 text-center py-8 text-xs text-slate-400 bg-white border rounded-2xl">Filtreye uygun öğrenci bulunamadı.</div>'}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderStudentDetail() {
+      const st = state.students.find(s => s.id === state.selectedStudentId);
+      if (!st) { state.selectedStudentId = null; return renderStudents(); }
+      const tabs = [
+        ['overview','Genel Bakış'],['wrong','Kaynak & Yanlış'],['tests','Test Kayıtları'],['mocks','Denemeler'],
+        ['school','Okul Notu'],['topics','Konular'],['charts','Grafikler'],['flashcards','Flashcard & Hareket']
+      ];
+      let tabHtml = '';
+      if (state.studentDetailTab === 'overview') {
+        tabHtml = `
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4">
+              <div class="font-bold text-indigo-900 text-sm mb-2">🤖 AI Eksik Kapatma Merkezi</div>
+              <ul class="space-y-1.5 text-xs text-indigo-800">${st.aiTasks.map(t => `<li>• ${escapeHtml(t)}</li>`).join('')}</ul>
+            </div>
+            <div class="bg-white border rounded-2xl p-4">
+              <div class="font-bold text-sm mb-2">Görevler</div>
+              <div class="text-xs text-slate-600">Bu hafta ${st.weeklyTasksDone} / ${st.weeklyTasksTotal} görev tamamlandı.</div>
+            </div>
+            <div class="bg-white border rounded-2xl p-4">
+              <div class="font-bold text-sm mb-2">Koç Notları</div>
+              <ul class="space-y-1 text-xs text-slate-600">${st.coachNotes.map(n => `<li>• ${escapeHtml(n)}</li>`).join('')}</ul>
+            </div>
+          </div>`;
+      } else if (state.studentDetailTab === 'wrong') {
+        tabHtml = `<div class="bg-white border rounded-2xl p-4 text-xs space-y-2"><div class="font-bold text-sm">Kaynak & Yanlış Analizi</div>${st.wrongTopics.map(w => `<div class="p-2 rounded-lg bg-rose-50 text-rose-800">${escapeHtml(w)}</div>`).join('')}</div>`;
+      } else if (state.studentDetailTab === 'tests') {
+        tabHtml = `<div class="bg-white border rounded-2xl p-4 text-xs space-y-2"><div class="font-bold text-sm">Test Kayıtları</div>${st.testLogs.map(t => `<div class="p-2 rounded-lg bg-slate-50">${escapeHtml(t)}</div>`).join('')}</div>`;
+      } else if (state.studentDetailTab === 'mocks') {
+        tabHtml = `<div class="bg-white border rounded-2xl p-4 text-xs space-y-2"><div class="font-bold text-sm">Denemeler</div>${st.mockExams.map(m => `<div class="p-2 rounded-lg bg-slate-50 flex justify-between"><span>${escapeHtml(m.name)} (${escapeHtml(m.date)})</span><b>${m.net} Net</b></div>`).join('')}</div>`;
+      } else if (state.studentDetailTab === 'school') {
+        tabHtml = `<div class="bg-white border rounded-2xl p-4 text-xs"><div class="font-bold text-sm mb-1">Okul Notu</div><p>${escapeHtml(st.schoolNotes)}</p></div>`;
+      } else if (state.studentDetailTab === 'topics') {
+        const tList = state.topicsByExam[st.exam] || state.topicsByExam['YKS'];
+        tabHtml = `<div class="bg-white border rounded-2xl p-4 text-xs space-y-1.5"><div class="font-bold text-sm mb-2">${escapeHtml(st.exam)} Konuları</div>${tList.map(tp => `<div>${tp.done ? '✅' : '⬜'} ${escapeHtml(tp.name)}</div>`).join('')}</div>`;
+      } else if (state.studentDetailTab === 'charts') {
+        tabHtml = `<div class="bg-white border rounded-2xl p-4 text-xs"><div class="font-bold text-sm mb-2">Gelişim Grafiği</div><div class="flex items-end gap-3 h-32 pt-4">${st.mockExams.map(m => `<div class="flex-1 bg-indigo-500 rounded-t-lg text-white text-center text-[10px] flex flex-col justify-end p-1" style="height:${Math.min(100, Math.max(25, m.net))}%">${m.net}</div>`).join('')}</div></div>`;
+      } else {
+        tabHtml = `<div class="bg-white border rounded-2xl p-4 text-xs"><div class="font-bold text-sm mb-1">Flashcard & Hareket</div><p>${escapeHtml(st.flashcards)}</p></div>`;
+      }
+      return `
+        <div class="space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <button id="backToStudentsBtn" class="px-3 py-1.5 rounded-xl bg-white border text-xs font-semibold hover:bg-slate-50">&lt;- Öğrenciler</button>
+            <div class="flex flex-wrap gap-1.5">
+              <button id="editStudentBtn" class="px-2.5 py-1.5 rounded-xl bg-white border text-xs font-semibold">Düzenle</button>
+              <button onclick="window.print()" class="px-2.5 py-1.5 rounded-xl bg-white border text-xs font-semibold">PDF Rapor</button>
+              <button onclick="window.print()" class="px-2.5 py-1.5 rounded-xl bg-white border text-xs font-semibold">PDF / Yazdır</button>
+              <button id="archiveDetailStudentBtn" class="px-2.5 py-1.5 rounded-xl bg-amber-50 text-amber-700 text-xs font-semibold">Arşivle</button>
+              <button id="deleteDetailStudentBtn" class="px-2.5 py-1.5 rounded-xl bg-rose-50 text-rose-700 text-xs font-semibold">Sil</button>
+            </div>
+          </div>
+          <div class="bg-white border rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+            <div><h2 class="text-lg font-extrabold">${escapeHtml(st.name)}</h2><p class="text-xs text-slate-500">${escapeHtml(st.grade)} • ${escapeHtml(st.exam)} • Hedef: ${escapeHtml(st.target)}</p></div>
+            <div class="flex flex-wrap gap-3 text-center text-xs">
+              <div class="px-3 py-2 rounded-xl bg-indigo-50"><div class="text-[10px] text-indigo-600 font-bold">SINAV GERİ SAYIM</div><div class="font-extrabold text-base">${st.daysLeft} Gün</div></div>
+              <div class="px-3 py-2 rounded-xl bg-slate-50"><div class="text-[10px] text-slate-400 font-bold">İLERLEME</div><div class="font-extrabold text-base">%${st.progress}</div></div>
+              <div class="px-3 py-2 rounded-xl bg-slate-50"><div class="text-[10px] text-slate-400 font-bold">HAFTALIK GÖREV</div><div class="font-extrabold text-base">${st.weeklyTasksDone}/${st.weeklyTasksTotal}</div></div>
+              <div class="px-3 py-2 rounded-xl bg-slate-50"><div class="text-[10px] text-slate-400 font-bold">KATILIM</div><div class="font-extrabold text-base">%${st.attendance}</div></div>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+            <div class="bg-white border rounded-2xl p-4 space-y-2">
+              <div class="text-xs font-bold text-slate-500">SEANS YÖNETİMİ (${st.sessionsUsed} / ${st.sessionsTotal})</div>
+              <div class="flex gap-2">
+                <button id="useSessionBtn" class="flex-1 py-1.5 rounded-xl bg-rose-50 text-rose-700 text-xs font-semibold">— Seans Kullanıldı</button>
+                <button id="addSessionPackBtn" class="flex-1 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-semibold">+ Seans Ekle</button>
+              </div>
+            </div>
+            <div class="bg-white border rounded-2xl p-4 space-y-2">
+              <div class="text-xs font-bold text-slate-500">RİSK DURUMU</div>
+              <div class="flex gap-1.5">
+                ${[['none','Risk Yok'],['medium','Orta Riskli'],['risky','Riskli']].map(([rk, lbl]) => `
+                  <button data-set-risk="${rk}" class="flex-1 py-1.5 rounded-xl text-xs font-semibold border ${st.risk === rk ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700'}">${lbl}</button>
+                `).join('')}
+              </div>
+            </div>
+            <div class="bg-white border rounded-2xl p-4 text-xs space-y-1">
+              <div class="font-bold text-slate-500">SÜRE KARTLARI</div>
+              <div>Site Aktif: <b>${st.siteMinutes} dk</b></div>
+              <div>Pomodoro: Bugün <b>${st.pomodoroToday} dk</b> • Bu Hafta <b>${st.pomodoroWeek} dk</b> • Toplam <b>${st.pomodoroTotal} dk</b></div>
+            </div>
+          </div>
+          <div class="flex gap-3 border-b overflow-x-auto">
+            ${tabs.map(([k, lbl]) => `<button data-detail-tab="${k}" class="subtab-btn pb-2 text-xs whitespace-nowrap ${state.studentDetailTab === k ? 'active' : 'text-slate-500'}">${lbl}</button>`).join('')}
+          </div>
+          ${tabHtml}
+        </div>
+      `;
+    }
+
+    function renderTopics() {
+      const exams = ['YKS','LGS','KPSS','MEBAGS/ÖABT','ALES','DGS','TUS','YDS'];
+      const list = state.topicsByExam[state.topicExamGroup] || [];
+      const done = list.filter(t => t.done).length;
+      return `
+        <div class="space-y-4">
+          <h1 class="text-xl font-extrabold">Konu Takibi</h1>
+          <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <div class="bg-white border rounded-2xl p-3 space-y-1.5">
+              <div class="text-xs font-bold text-slate-400 px-2">ÖĞRENCİLER</div>
+              ${state.students.map(s => `<button data-topic-st="${escapeHtml(s.id)}" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold ${state.topicStudentId === s.id ? 'bg-indigo-600 text-white' : 'hover:bg-slate-100'}">${escapeHtml(s.name)}</button>`).join('')}
+            </div>
+            <div class="lg:col-span-3 bg-white border rounded-2xl p-4 space-y-4">
+              <div class="flex flex-wrap gap-1.5">
+                ${exams.map(ex => `<button data-topic-ex="${escapeHtml(ex)}" class="px-3 py-1.5 rounded-xl text-xs font-semibold ${state.topicExamGroup === ex ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'}">${escapeHtml(ex)}</button>`).join('')}
+              </div>
+              <div class="flex flex-wrap items-center justify-between gap-2 text-xs bg-slate-50 p-3 rounded-xl">
+                <div>Biten: <b>${done}</b> • Kalan: <b>${list.length - done}</b> • Toplam: <b>${list.length}</b></div>
+                <div class="flex gap-2">
+                  <button id="selectAllTopicsBtn" class="px-2.5 py-1 rounded-lg bg-white border font-semibold">Tümünü Seç</button>
+                  <button id="addManualTopicBtn" class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-semibold">+ Manuel konu ekle</button>
+                </div>
+              </div>
+              <div class="space-y-1.5">
+                ${list.map((tp, i) => `
+                  <label class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 text-xs cursor-pointer">
+                    <input type="checkbox" data-topic-idx="${i}" ${tp.done ? 'checked' : ''} class="rounded text-indigo-600" />
+                    <span class="${tp.done ? 'line-through text-slate-400' : 'text-slate-800'}">${escapeHtml(tp.name)}</span>
+                  </label>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderGoals() {
+      return `
+        <div class="space-y-4">
+          <h1 class="text-xl font-extrabold">Hedefler</h1>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            ${state.goals.map(g => `
+              <div class="bg-white border rounded-2xl p-4 space-y-2">
+                <div class="flex justify-between items-center"><span class="font-bold text-sm">${escapeHtml(g.studentName)}</span><span class="text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-semibold">${escapeHtml(g.exam)}</span></div>
+                <div class="text-xs text-slate-500">Mevcut: <b>${escapeHtml(g.currentScore)}</b> → Hedef: <b>${escapeHtml(g.targetScore)}</b></div>
+                <div class="w-full bg-slate-100 rounded-full h-2"><div class="bg-indigo-600 h-2 rounded-full" style="width:${g.percent}%"></div></div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderResources() {
+      return `
+        <div class="space-y-4">
+          <h1 class="text-xl font-extrabold">Kaynaklar</h1>
+          <div class="bg-white border rounded-2xl p-4 space-y-2">
+            ${state.resources.map(r => `<div class="p-3 rounded-xl bg-slate-50 flex justify-between text-xs"><span><b>${escapeHtml(r.studentName)}</b> — ${escapeHtml(r.book)}</span><span class="font-semibold text-indigo-600">${escapeHtml(r.progress)}</span></div>`).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderLibrary() {
+      const tabs = ['LGS','6–12. Sınıf','YKS','KPSS Lisans','KPSS Ön Lisans','KPSS Orta Öğ.','ALES','DGS','YDS','TUS'];
+      const books = state.library.books[state.libraryTab] || [];
+      return `
+        <div class="space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <h1 class="text-xl font-extrabold">Kaynak Kütüphanem</h1>
+            <button id="addLibraryBookBtn" class="px-3.5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold">+ Kaynak Ekle</button>
+          </div>
+          <div class="bg-white border rounded-2xl p-4">
+            <div class="text-xs font-bold text-slate-400 mb-2">ÖZEL KONULARIM</div>
+            <div class="flex flex-wrap gap-2">${state.library.customTopics.map(c => `<span class="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold">${escapeHtml(c)}</span>`).join('')}</div>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            ${tabs.map(t => `<button data-lib-tab="${escapeHtml(t)}" class="px-3 py-1.5 rounded-xl text-xs font-semibold ${state.libraryTab === t ? 'bg-indigo-600 text-white' : 'bg-white border text-slate-700'}">${escapeHtml(t)}</button>`).join('')}
+          </div>
+          <div class="bg-white border rounded-2xl p-4 space-y-2">
+            <h3 class="font-bold text-sm">${escapeHtml(state.libraryTab)} Kaynakları</h3>
+            ${books.map(b => `<div class="p-2.5 rounded-xl bg-slate-50 text-xs font-medium">📘 ${escapeHtml(b)}</div>`).join('') || '<div class="text-xs text-slate-400">Bu kategoride kaynak yok.</div>'}
+          </div>
+        </div>
+      `;
+    }
+    function renderExamAnalytics() {
+      return `
+        <div class="space-y-4">
+          <h1 class="text-xl font-extrabold">Deneme Analitiği</h1>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div class="bg-white border rounded-2xl p-4"><div class="text-xs text-slate-400 font-bold">ORTALAMA TYT NETİ</div><div class="text-2xl font-extrabold text-indigo-600 mt-1">87.2 Net</div></div>
+            <div class="bg-white border rounded-2xl p-4"><div class="text-xs text-slate-400 font-bold">ORTALAMA AYT NETİ</div><div class="text-2xl font-extrabold text-emerald-600 mt-1">58.4 Net</div></div>
+            <div class="bg-white border rounded-2xl p-4"><div class="text-xs text-slate-400 font-bold">EN YÜKSEK ARTIŞ</div><div class="text-2xl font-extrabold text-amber-600 mt-1">+8.5 Net</div></div>
+          </div>
+          <div class="bg-white border rounded-2xl p-4 space-y-2">
+            <h3 class="font-bold text-sm">Öğrenci Bazlı Son Denemeler</h3>
+            ${state.students.map(s => `<div class="p-2.5 rounded-xl bg-slate-50 text-xs flex justify-between"><span><b>${escapeHtml(s.name)}</b> (${escapeHtml(s.exam)})</span><span>${s.mockExams[0] ? escapeHtml(s.mockExams[0].name) + ': ' + s.mockExams[0].net + ' Net' : 'Kayıt yok'}</span></div>`).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderWrongAnalysis() {
+      return `
+        <div class="space-y-4">
+          <h1 class="text-xl font-extrabold">Yanlış Analizi</h1>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div class="bg-white border rounded-2xl p-4"><div class="text-xs text-slate-400 font-bold">Toplam Yanlış</div><div class="text-2xl font-extrabold text-rose-600 mt-1">142</div></div>
+            <div class="bg-white border rounded-2xl p-4"><div class="text-xs text-slate-400 font-bold">Hata Oranı</div><div class="text-2xl font-extrabold text-amber-600 mt-1">%18.4</div></div>
+            <div class="bg-white border rounded-2xl p-4"><div class="text-xs text-slate-400 font-bold">Doğru Oranı</div><div class="text-2xl font-extrabold text-emerald-600 mt-1">%81.6</div></div>
+          </div>
+          <div class="bg-white border rounded-2xl p-4 space-y-2 text-xs">
+            <h3 class="font-bold text-sm">En Çok Yanlış Yapılan Konular</h3>
+            <div class="p-2.5 rounded-xl bg-rose-50 text-rose-800 flex justify-between"><span>Üslü İfadeler (LGS)</span><b>24 Yanlış</b></div>
+            <div class="p-2.5 rounded-xl bg-rose-50 text-rose-800 flex justify-between"><span>Türev - Ekstremum (YKS)</span><b>19 Yanlış</b></div>
+            <div class="p-2.5 rounded-xl bg-rose-50 text-rose-800 flex justify-between"><span>Optik - Kırılma (YKS)</span><b>15 Yanlış</b></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderOpticReader() {
+      let d = 0, y = 0, b = 0;
+      state.optic.keyAnswers.forEach((ans, idx) => {
+        const st = state.optic.studentAnswers[idx] || '-';
+        if (st === '-') b++;
+        else if (st === ans) d++;
+        else y++;
+      });
+      const net = (d - y / 4).toFixed(2);
+      const opts = ['A','B','C','D','E','-'];
+      return `
+        <div class="space-y-4">
+          <h1 class="text-xl font-extrabold">Fotoğraftan Optik</h1>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-white border rounded-2xl p-4 space-y-2">
+              <div class="text-xs font-bold text-indigo-600">ADIM 1</div>
+              <div class="font-bold text-sm">.xlsx anahtar seç</div>
+              <input id="opticKeyInput" type="file" accept=".xlsx,.xls,.csv" class="text-xs block w-full" />
+              <div class="text-[11px] text-slate-500">${state.optic.keyFileName ? 'Seçili: ' + escapeHtml(state.optic.keyFileName) : 'Varsayılan 20 soruluk örnek anahtar yüklü.'}</div>
+            </div>
+            <div class="bg-white border rounded-2xl p-4 space-y-2">
+              <div class="text-xs font-bold text-indigo-600">ADIM 2</div>
+              <div class="font-bold text-sm">Optik fotoğrafı seç</div>
+              <input id="opticPhotoInput" type="file" accept="image/*" class="text-xs block w-full" />
+              <div class="text-[11px] text-slate-500">${state.optic.photoFileName ? 'Seçili: ' + escapeHtml(state.optic.photoFileName) : 'Örnek optik tarama verisi aktif.'}</div>
+            </div>
+          </div>
+          <div class="bg-white border rounded-2xl p-4 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h3 class="font-bold text-sm">Etkileşimli Izgara Düzeltme & D/Y/B Net Hesabı</h3>
+              <div class="flex gap-3 text-xs font-bold">
+                <span class="text-emerald-600">Doğru: ${d}</span>
+                <span class="text-rose-600">Yanlış: ${y}</span>
+                <span class="text-slate-500">Boş: ${b}</span>
+                <span class="text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-lg">Net: ${net}</span>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2">
+              ${state.optic.keyAnswers.map((ans, idx) => {
+                const cur = state.optic.studentAnswers[idx] || '-';
+                const ok = cur === ans;
+                return `<div class="p-2 rounded-xl border text-xs ${cur === '-' ? 'bg-slate-50' : ok ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}">
+                  <div class="flex justify-between font-bold mb-1"><span>S${idx + 1} (Anahtar: ${escapeHtml(ans)})</span></div>
+                  <div class="flex gap-1">
+                    ${opts.map(o => `<button data-optic-q="${idx}" data-optic-val="${o}" class="flex-1 py-0.5 rounded text-[11px] font-bold ${cur === o ? 'bg-indigo-600 text-white' : 'bg-white border'}">${o}</button>`).join('')}
+                  </div>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderGeneralReports() {
+      const gr = state.generalReports;
+      let body = '';
+      if (state.generalReportTab === 'general') {
+        body = gr.generalExams.map(e => `<div class="p-3 rounded-xl bg-slate-50 flex justify-between text-xs"><span><b>${escapeHtml(e.name)}</b> (Ort: ${e.avgNet} Net)</span><span class="text-indigo-600 font-semibold">1.: ${escapeHtml(e.topStudent)}</span></div>`).join('');
+      } else if (state.generalReportTab === 'branch') {
+        body = gr.branchExams.map(e => `<div class="p-3 rounded-xl bg-slate-50 flex justify-between text-xs"><span><b>${escapeHtml(e.name)}</b> (Ort: ${e.avgNet} Net)</span><span class="text-indigo-600 font-semibold">1.: ${escapeHtml(e.topStudent)}</span></div>`).join('');
+      } else {
+        body = gr.questionTracking.map(q => `<div class="p-3 rounded-xl bg-slate-50 flex justify-between text-xs"><b>${escapeHtml(q.student)}</b><span>Haftalık: ${q.weekly} • Aylık: ${q.monthly} soru</span></div>`).join('');
+      }
+      return `
+        <div class="space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h1 class="text-xl font-extrabold">Genel Raporlar</h1>
+            <div class="flex gap-2">
+              <button id="addGeneralExamBtn" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold">+ Deneme Ekle</button>
+              <button id="addBranchExamBtn" class="px-3 py-1.5 rounded-xl bg-white border text-xs font-semibold">+ Branş / ÖABT Deneme</button>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            ${[['general','Genel Deneme'],['branch','Branş Deneme'],['questions','Soru Takibi']].map(([k, lbl]) => `
+              <button data-gr-tab="${k}" class="tab-btn px-3 py-1.5 rounded-xl text-xs font-semibold ${state.generalReportTab === k ? 'active' : 'bg-white border text-slate-700'}">${lbl}</button>
+            `).join('')}
+          </div>
+          <div class="bg-white border rounded-2xl p-4 space-y-2">${body}</div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-white border rounded-2xl p-4 text-xs space-y-2">
+              <div class="font-bold text-sm">Deneme Karşılaştırma</div>
+              <div>Özdebir TYT-3 (88.4) vs Apotemi TYT-2 (91.2) → <b>+2.8 Net Artış</b></div>
+            </div>
+            <div class="bg-white border rounded-2xl p-4 text-xs space-y-2">
+              <div class="font-bold text-sm">Admin Notu</div>
+              <p class="text-slate-600">${escapeHtml(gr.adminNote)}</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderWeeklyReports() {
+      const list = state.weeklyReports.filter(r => r.status === state.weeklyReportTab);
+      return `
+        <div class="space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <h1 class="text-xl font-extrabold">Haftalık Raporlar</h1>
+            <button id="generateWeeklyNowBtn" class="px-3.5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold">Şimdi Oluştur</button>
+          </div>
+          <div class="flex gap-2">
+            ${[['pending','Bekleyen'],['approved','Onaylı (gönderilmemiş)'],['sent','Gönderilen']].map(([k, lbl]) => `
+              <button data-wr-tab="${k}" class="tab-btn px-3 py-1.5 rounded-xl text-xs font-semibold ${state.weeklyReportTab === k ? 'active' : 'bg-white border text-slate-700'}">${lbl}</button>
+            `).join('')}
+          </div>
+          <div class="bg-white border rounded-2xl p-4 space-y-2">
+            ${list.map(r => `
+              <div class="p-3 rounded-xl bg-slate-50 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div><b>${escapeHtml(r.studentName)}</b> (${escapeHtml(r.week)}) — ${escapeHtml(r.summary)}</div>
+                <div class="flex gap-1.5">
+                  ${r.status === 'pending' ? `<button data-wr-act="approve" data-id="${escapeHtml(r.id)}" class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-semibold">Onayla</button>` : ''}
+                  ${r.status === 'approved' ? `<button data-wr-act="send" data-id="${escapeHtml(r.id)}" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-semibold">Gönder</button>` : ''}
+                </div>
+              </div>
+            `).join('') || '<div class="text-xs text-slate-400">Bu sekmede rapor bulunmuyor.</div>'}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPayments() {
+      const activePkg = state.students.filter(s => (s.sessionsTotal - s.sessionsUsed) > 0).length;
+      const finishedPkg = state.students.filter(s => (s.sessionsTotal - s.sessionsUsed) <= 0).length;
+      const list = state.students.filter(s => {
+        const rem = s.sessionsTotal - s.sessionsUsed;
+        if (state.paymentFilter === 'active') return rem > 0;
+        if (state.paymentFilter === 'finished') return rem <= 0;
+        return true;
+      });
+      return `
+        <div class="space-y-4">
+          <h1 class="text-xl font-extrabold">Ödeme Takibi</h1>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div class="bg-white border rounded-2xl p-4"><div class="text-[11px] font-bold text-slate-400">TOPLAM ÖĞRENCİ</div><div class="text-2xl font-extrabold mt-1">${state.students.length}</div></div>
+            <div class="bg-white border rounded-2xl p-4"><div class="text-[11px] font-bold text-emerald-600">AKTİF SEANSI OLAN</div><div class="text-2xl font-extrabold mt-1">${activePkg}</div></div>
+            <div class="bg-white border rounded-2xl p-4"><div class="text-[11px] font-bold text-rose-600">SEANSI BİTMİŞ</div><div class="text-2xl font-extrabold mt-1">${finishedPkg}</div></div>
+          </div>
+          <div class="flex gap-2">
+            ${[['all','Tümü'],['active','Aktif Seansı Olan'],['finished','Seansı Bitmiş']].map(([k, lbl]) => `
+              <button data-pay-filter="${k}" class="tab-btn px-3 py-1.5 rounded-xl text-xs font-semibold ${state.paymentFilter === k ? 'active' : 'bg-white border text-slate-700'}">${lbl}</button>
+            `).join('')}
+          </div>
+          <div class="space-y-3">
+            ${list.map(st => {
+              const rem = st.sessionsTotal - st.sessionsUsed;
+              return `<div class="bg-white border rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div><div class="font-bold text-sm">${escapeHtml(st.name)}</div><div class="text-slate-500">Kullanılan: ${st.sessionsUsed} / Toplam: ${st.sessionsTotal} • Kalan: <b class="${rem <= 0 ? 'text-rose-600' : 'text-emerald-600'}">${rem} Seans</b></div></div>
+                <div class="flex flex-wrap gap-1.5">
+                  <button data-pay-act="use" data-id="${escapeHtml(st.id)}" class="px-2.5 py-1.5 rounded-xl bg-rose-50 text-rose-700 font-semibold">— Seans Kullan (Görüşme)</button>
+                  <button data-pay-act="add4" data-id="${escapeHtml(st.id)}" class="px-2.5 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 font-semibold">+ 4 Seans Ekle (Ödeme Geldi)</button>
+                  <button data-pay-act="makeup" data-id="${escapeHtml(st.id)}" class="px-2.5 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 font-semibold">+ Telafi</button>
+                  <button data-pay-act="manual" data-id="${escapeHtml(st.id)}" class="px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-700 font-semibold">— Manuel Seans</button>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderUpdates() {
+      return `
+        <div class="space-y-4">
+          <h1 class="text-xl font-extrabold">Yenilikler</h1>
+          <div class="space-y-3">
+            ${state.updates.map(u => `
+              <div class="bg-white border rounded-2xl p-4 space-y-2">
+                <div class="flex items-center gap-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${u.type === 'Yeni' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}">${escapeHtml(u.type)}</span><h3 class="font-bold text-sm">${escapeHtml(u.title)}</h3></div>
+                <p class="text-xs text-slate-600">${escapeHtml(u.desc)}</p>
+                <details class="text-xs text-slate-700 bg-slate-50 rounded-xl p-2.5"><summary class="font-semibold cursor-pointer text-indigo-700">Nasıl kullanılır?</summary><p class="mt-1.5">${escapeHtml(u.guide)}</p></details>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderProfile() {
+      const p = state.profile;
+      return `
+        <div class="space-y-4 max-w-xl">
+          <h1 class="text-xl font-extrabold">Profil</h1>
+          <form id="profileForm" class="bg-white border rounded-2xl p-5 space-y-3 text-xs">
+            <div><label class="font-bold block mb-1">Ad Soyad</label><input id="profName" type="text" value="${escapeHtml(p.name)}" class="w-full px-3 py-2 rounded-xl border" /></div>
+            <div><label class="font-bold block mb-1">Unvan</label><input id="profTitle" type="text" value="${escapeHtml(p.title)}" class="w-full px-3 py-2 rounded-xl border" /></div>
+            <div><label class="font-bold block mb-1">Kurum</label><input id="profInst" type="text" value="${escapeHtml(p.institution)}" class="w-full px-3 py-2 rounded-xl border" /></div>
+            <label class="flex items-center gap-2"><input id="profNotifSes" type="checkbox" ${p.notifySession ? 'checked' : ''} /> Görüşme bildirimleri aktif</label>
+            <p class="text-[11px] text-slate-400">Güvenlik politikası gereği e-posta ve şifre bilgileri tarayıcı deposunda saklanmaz.</p>
+            <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-semibold">Profili Kaydet</button>
+          </form>
+        </div>
+      `;
+    }
+
+    function bindPageEvents() {
+      const cw = document.getElementById('customizeWidgetsBtn');
+      if (cw) cw.addEventListener('click', () => {
+        const labels = { activity:'Aktivite Kartı', metrics:'4 Metrik', promo:'3 dk Tanıtım', calendar:'Aylık Takvim', quick:'Hızlı İşlemler', sessions:'Bugünkü Seanslar', stars:'Haftanın Yıldızları', notes:'Not Tablosu', recent:'Son Aktiviteler' };
+        openModal('Ana Sayfa Widgetlarını Özelleştir', `<div class="space-y-2 text-xs">${Object.keys(labels).map(k => `<label class="flex items-center gap-2"><input type="checkbox" data-w-key="${k}" ${state.widgets[k] ? 'checked' : ''} /> ${labels[k]}</label>`).join('')}</div>`);
+        document.querySelectorAll('[data-w-key]').forEach(cb => cb.addEventListener('change', () => {
+          state.widgets[cb.getAttribute('data-w-key')] = cb.checked;
+          saveState();
+          renderAll();
+        }));
+      });
+
+      const wi = document.getElementById('watchIntroBtn');
+      if (wi) wi.addEventListener('click', () => openModal('3 Dakikalık Koç Paneli Tanıtımı', '<div class="text-xs text-slate-600 space-y-2"><div class="aspect-video bg-slate-900 text-white rounded-xl flex items-center justify-center font-bold">▶ Tanıtım Videosu Önizlemesi (03:00)</div><p>Tüm modüllere sol menüden hızlıca erişebilirsiniz.</p></div>'));
+
+      const qas = document.getElementById('quickAddSessionBtn');
+      if (qas) qas.addEventListener('click', () => { state.activePage = 'meetings'; saveState(); renderAll(); });
+
+      const qbm = document.getElementById('quickBulkMsgBtn');
+      if (qbm) qbm.addEventListener('click', () => openModal('Toplu Mesaj Gönder', '<div class="space-y-2 text-xs"><textarea id="bulkMsgText" rows="3" class="w-full border rounded-xl p-2" placeholder="Tüm aktif öğrencilere mesajınız..."></textarea><button id="sendBulkBtn" class="px-4 py-2 rounded-xl bg-emerald-600 text-white font-semibold">Gönder</button></div>'));
+      const sbBtn = document.getElementById('sendBulkBtn');
+      if (sbBtn) sbBtn.addEventListener('click', () => { closeModal(); alert('Toplu mesaj iletildi.'); });
+
+      const qwr = document.getElementById('quickWeeklyReportBtn');
+      if (qwr) qwr.addEventListener('click', () => { state.activePage = 'weekly-reports'; saveState(); renderAll(); });
+
+      const an = document.getElementById('addNoteBtn');
+      if (an) an.addEventListener('click', () => {
+        const txt = prompt('Yeni koç notu:');
+        if (txt && txt.trim()) {
+          state.notes.unshift({ id: 'nt' + Date.now(), text: txt.trim(), date: new Date().toLocaleDateString('tr-TR') });
+          saveState();
+          renderAll();
+        }
+      });
+
+      const ddp = document.getElementById('dailyDatePicker');
+      if (ddp) ddp.addEventListener('change', () => { state.dailyDate = ddp.value; saveState(); renderAll(); });
+
+      document.querySelectorAll('[data-toggle-task]').forEach(cb => cb.addEventListener('change', () => {
+        const id = cb.getAttribute('data-toggle-task');
+        const t = state.dailyTasks.find(x => x.id === id);
+        if (t) { t.done = cb.checked; saveState(); renderAll(); }
+      }));
+
+      const amb = document.getElementById('addMeetingBtn');
+      if (amb) amb.addEventListener('click', () => {
+        const stName = prompt('Öğrenci adı:', 'Ayşe Yılmaz');
+        const topic = prompt('Görüşme konusu:', 'Haftalık Değerlendirme');
+        if (stName && topic) {
+          state.sessions.unshift({ id: 'ses' + Date.now(), studentId: 's1', studentName: stName, time: '16:00', date: new Date().toISOString().slice(0,10), topic, status: 'Planlandı' });
+          saveState();
+          renderAll();
+        }
+      });
+
+      const asb = document.getElementById('addStudentBtn');
+      if (asb) asb.addEventListener('click', () => {
+        const name = prompt('Öğrenci Adı Soyadı:');
+        if (!name || !name.trim()) return;
+        state.students.unshift({ id: 's' + Date.now(), name: name.trim(), grade: '12. Sınıf', exam: 'YKS', target: 'Hedef Belirlenecek', daysLeft: 198, progress: 50, weeklyTasksDone: 0, weeklyTasksTotal: 10, attendance: 100, risk: 'none', status: 'active', sessionsTotal: 8, sessionsUsed: 0, siteMinutes: 0, pomodoroToday: 0, pomodoroWeek: 0, pomodoroTotal: 0, schoolNotes: '-', wrongTopics: [], testLogs: [], mockExams: [], coachNotes: [], aiTasks: ['İlk deneme planlaması'], flashcards: 'Henüz hareket yok' });
+        saveState();
+        renderAll();
+      });
+
+      document.querySelectorAll('[data-arch]').forEach(b => b.addEventListener('click', () => { state.studentArchiveFilter = b.getAttribute('data-arch'); saveState(); renderAll(); }));
+      document.querySelectorAll('[data-risk]').forEach(b => b.addEventListener('click', () => { state.studentRiskFilter = b.getAttribute('data-risk'); saveState(); renderAll(); }));
+      const ssi = document.getElementById('studentSearchInput');
+      if (ssi) ssi.addEventListener('input', () => { state.studentSearch = ssi.value; renderAll(); });
+
+      document.querySelectorAll('[data-st-act]').forEach(b => b.addEventListener('click', () => {
+        const act = b.getAttribute('data-st-act');
+        const id = b.getAttribute('data-id');
+        const st = state.students.find(x => x.id === id);
+        if (!st) return;
+        if (act === 'detail') { state.selectedStudentId = id; saveState(); renderAll(); }
+        else if (act === 'archive') { st.status = st.status === 'active' ? 'archived' : 'active'; saveState(); renderAll(); }
+        else if (act === 'msg') { alert(st.name + ' öğrencisine mesaj penceresi açıldı.'); }
+        else if (act === 'task') { st.weeklyTasksTotal += 1; saveState(); renderAll(); }
+        else if (act === 'report') { state.activePage = 'weekly-reports'; saveState(); renderAll(); }
+      }));
+
+      const bts = document.getElementById('backToStudentsBtn');
+      if (bts) bts.addEventListener('click', () => { state.selectedStudentId = null; saveState(); renderAll(); });
+
+      const us = document.getElementById('useSessionBtn');
+      if (us) us.addEventListener('click', () => {
+        const st = state.students.find(x => x.id === state.selectedStudentId);
+        if (st && st.sessionsUsed < st.sessionsTotal) { st.sessionsUsed += 1; saveState(); renderAll(); }
+      });
+      const asp = document.getElementById('addSessionPackBtn');
+      if (asp) asp.addEventListener('click', () => {
+        const st = state.students.find(x => x.id === state.selectedStudentId);
+        if (st) { st.sessionsTotal += 4; saveState(); renderAll(); }
+      });
+
+      document.querySelectorAll('[data-set-risk]').forEach(b => b.addEventListener('click', () => {
+        const st = state.students.find(x => x.id === state.selectedStudentId);
+        if (st) { st.risk = b.getAttribute('data-set-risk'); saveState(); renderAll(); }
+      }));
+      document.querySelectorAll('[data-detail-tab]').forEach(b => b.addEventListener('click', () => {
+        state.studentDetailTab = b.getAttribute('data-detail-tab'); saveState(); renderAll();
+      }));
+
+      const ads = document.getElementById('archiveDetailStudentBtn');
+      if (ads) ads.addEventListener('click', () => {
+        const st = state.students.find(x => x.id === state.selectedStudentId);
+        if (st) { st.status = 'archived'; state.selectedStudentId = null; saveState(); renderAll(); }
+      });
+      const dds = document.getElementById('deleteDetailStudentBtn');
+      if (dds) dds.addEventListener('click', () => {
+        state.students = state.students.filter(x => x.id !== state.selectedStudentId);
+        state.selectedStudentId = null; saveState(); renderAll();
+      });
+
+      document.querySelectorAll('[data-topic-st]').forEach(b => b.addEventListener('click', () => { state.topicStudentId = b.getAttribute('data-topic-st'); saveState(); renderAll(); }));
+      document.querySelectorAll('[data-topic-ex]').forEach(b => b.addEventListener('click', () => { state.topicExamGroup = b.getAttribute('data-topic-ex'); saveState(); renderAll(); }));
+      document.querySelectorAll('[data-topic-idx]').forEach(cb => cb.addEventListener('change', () => {
+        const idx = Number(cb.getAttribute('data-topic-idx'));
+        const list = state.topicsByExam[state.topicExamGroup];
+        if (list && list[idx]) { list[idx].done = cb.checked; saveState(); renderAll(); }
+      }));
+      const sat = document.getElementById('selectAllTopicsBtn');
+      if (sat) sat.addEventListener('click', () => {
+        (state.topicsByExam[state.topicExamGroup] || []).forEach(t => t.done = true);
+        saveState(); renderAll();
+      });
+      const amt = document.getElementById('addManualTopicBtn');
+      if (amt) amt.addEventListener('click', () => {
+        const name = prompt('Yeni konu adı:');
+        if (name && name.trim()) {
+          state.topicsByExam[state.topicExamGroup].push({ name: name.trim(), done: false });
+          saveState(); renderAll();
+        }
+      });
+
+      document.querySelectorAll('[data-lib-tab]').forEach(b => b.addEventListener('click', () => { state.libraryTab = b.getAttribute('data-lib-tab'); saveState(); renderAll(); }));
+      const alb = document.getElementById('addLibraryBookBtn');
+      if (alb) alb.addEventListener('click', () => {
+        const name = prompt(state.libraryTab + ' için yeni kaynak adı:');
+        if (name && name.trim()) {
+          if (!state.library.books[state.libraryTab]) state.library.books[state.libraryTab] = [];
+          state.library.books[state.libraryTab].push(name.trim());
+          saveState(); renderAll();
+        }
+      });
+
+      const oki = document.getElementById('opticKeyInput');
+      if (oki) oki.addEventListener('change', () => { if (oki.files[0]) { state.optic.keyFileName = oki.files[0].name; saveState(); renderAll(); } });
+      const opi = document.getElementById('opticPhotoInput');
+      if (opi) opi.addEventListener('change', () => { if (opi.files[0]) { state.optic.photoFileName = opi.files[0].name; saveState(); renderAll(); } });
+      document.querySelectorAll('[data-optic-q]').forEach(b => b.addEventListener('click', () => {
+        const q = Number(b.getAttribute('data-optic-q'));
+        state.optic.studentAnswers[q] = b.getAttribute('data-optic-val');
+        saveState(); renderAll();
+      }));
+
+      document.querySelectorAll('[data-gr-tab]').forEach(b => b.addEventListener('click', () => { state.generalReportTab = b.getAttribute('data-gr-tab'); saveState(); renderAll(); }));
+      document.querySelectorAll('[data-wr-tab]').forEach(b => b.addEventListener('click', () => { state.weeklyReportTab = b.getAttribute('data-wr-tab'); saveState(); renderAll(); }));
+      const gwn = document.getElementById('generateWeeklyNowBtn');
+      if (gwn) gwn.addEventListener('click', () => {
+        state.weeklyReports.unshift({ id: 'wr' + Date.now(), studentName: 'Mehmet Demir', week: '27 Kasım - 3 Aralık 2026', summary: 'Otomatik oluşturulan haftalık rapor', status: 'pending' });
+        state.weeklyReportTab = 'pending'; saveState(); renderAll();
+      });
+      document.querySelectorAll('[data-wr-act]').forEach(b => b.addEventListener('click', () => {
+        const r = state.weeklyReports.find(x => x.id === b.getAttribute('data-id'));
+        if (r) { r.status = b.getAttribute('data-wr-act') === 'approve' ? 'approved' : 'sent'; saveState(); renderAll(); }
+      }));
+
+      document.querySelectorAll('[data-pay-filter]').forEach(b => b.addEventListener('click', () => { state.paymentFilter = b.getAttribute('data-pay-filter'); saveState(); renderAll(); }));
+      document.querySelectorAll('[data-pay-act]').forEach(b => b.addEventListener('click', () => {
+        const st = state.students.find(x => x.id === b.getAttribute('data-id'));
+        const act = b.getAttribute('data-pay-act');
+        if (!st) return;
+        if (act === 'use' || act === 'manual') st.sessionsUsed += 1;
+        else if (act === 'add4') st.sessionsTotal += 4;
+        else if (act === 'makeup') st.sessionsTotal += 1;
+        saveState(); renderAll();
+      }));
+
+      const pf = document.getElementById('profileForm');
+      if (pf) pf.addEventListener('submit', (e) => {
+        e.preventDefault();
+        state.profile.name = document.getElementById('profName').value;
+        state.profile.title = document.getElementById('profTitle').value;
+        state.profile.institution = document.getElementById('profInst').value;
+        state.profile.notifySession = document.getElementById('profNotifSes').checked;
+        saveState(); renderAll();
+        alert('Profil kaydedildi.');
+      });
+    }
+
+    function renderAll() {
+      renderSidebar();
+      updateReminderUI();
+      renderNotifications();
+      const main = document.getElementById('mainContent');
+      const map = {
+        'home': renderHome,
+        'weekly-program': renderWeeklyProgram,
+        'daily-program': renderDailyProgram,
+        'meetings': renderMeetings,
+        'students': renderStudents,
+        'topics': renderTopics,
+        'goals': renderGoals,
+        'resources': renderResources,
+        'library': renderLibrary,
+        'exam-analytics': renderExamAnalytics,
+        'wrong-analysis': renderWrongAnalysis,
+        'optic-reader': renderOpticReader,
+        'general-reports': renderGeneralReports,
+        'weekly-reports': renderWeeklyReports,
+        'payments': renderPayments,
+        'updates': renderUpdates,
+        'profile': renderProfile
+      };
+      const fn = map[state.activePage] || renderHome;
+      main.innerHTML = fn();
+      bindPageEvents();
+    }
+
+    renderAll();
+  </script>
+</body>
+</html>
