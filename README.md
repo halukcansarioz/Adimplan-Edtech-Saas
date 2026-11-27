@@ -1,4 +1,4 @@
-# 🚀 Adimplan — EdTech Coaching SaaS (v1.9.0)
+# 🚀 Adimplan — EdTech Coaching SaaS (v2.0.0)
 
 [![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
@@ -40,6 +40,7 @@ Multi-tenant EdTech coaching and student tracking SaaS (**v1.0**) featuring **27
 | **Student Panel** | `/student.html` | Student dashboard & progress tracking (Öğrenci Paneli) |
 | **Pricing** | `/pricing.html` | Subscription plans & pricing (Fiyatlandırma) |
 | **Parent Report** | `/parent-report.html` | Shareable weekly parent report (Paylaşılabilir Haftalık Veli Raporu) |
+| **Optical Reader** | `/optical-reader.html` | Interactive optical reader & scoring (Etkileşimli Optik Okuyucu & Puanlama) |
 ---
 
 # 📌 About the Project
