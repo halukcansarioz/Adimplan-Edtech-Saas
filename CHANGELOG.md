@@ -2,6 +2,12 @@
 
 Bu dosya **İvme Akademi — Adımplan EdTech SaaS** projesindeki önemli sürüm değişikliklerini içerir.
 
+## [v2.0.0]
+
+### Eklenenler ve İyileştirmeler
+- **Etkileşimli Optik Okuyucu:** `frontend/optical-reader.html` ile etkileşimli optik baloncuk ızgarası, CSV toplu içe/dışa aktarım, otomatik D/Y/B + net analizi ve veli raporu kısayolu eklendi.
+- **PWA Güncellemesi:** Service worker önbellek sürümü `adimplan-pwa-v23` olarak güncellendi.
+- **Playwright E2E Testleri:** `test_optical_reader_loads_and_scores` E2E testi eklendi.
 ## [v1.9.0]
 
 ### Eklenenler ve İyileştirmeler
