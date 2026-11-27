@@ -20,6 +20,12 @@ except ImportError:
     from backend.optical_parser import parse_optical_csv
 
 app = FastAPI(title="Adimplan EdTech Analytics API", version="1.4.0")
+try:
+    from v17_routes import router as v17_router
+except ImportError:
+    from backend.v17_routes import router as v17_router
+
+app.include_router(v17_router)
 SENTRY_DSN = os.getenv("SENTRY_DSN")
 if SENTRY_DSN:
     try:
