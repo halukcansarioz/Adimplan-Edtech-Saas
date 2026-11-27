@@ -1,6 +1,6 @@
-const CACHE_NAME = 'adimplan-pwa-v14';
+const CACHE_NAME = 'adimplan-pwa-v15';
 const PRECACHE_URLS = [
-  './index.html',
+  './', './index.html',
   './login.html',
   './app.html',
   './admin.html',
@@ -70,6 +70,25 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/api/')) return;
 
+  const isStaticAsset = /\.(js|svg|json)$/i.test(url.pathname);
+    if (isStaticAsset) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(async (cache) => {
+        const cachedResponse = await cache.match(event.request);
+        const networkPromise = fetch(event.request)
+          .then(async (networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              const copy = await toCacheable(networkResponse.clone());
+              await cache.put(event.request, copy);
+            }
+            return networkResponse;
+          })
+          .catch(() => null);
+        return cachedResponse || (await networkPromise) || offlineFallback(event.request);
+      })
+    );
+    return;
+  }
   event.respondWith(
     fetch(event.request)
       .then(async (networkResponse) => {
