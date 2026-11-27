@@ -1,6 +1,15 @@
 # Değişiklik Günlüğü (Changelog)
 
 Bu dosya **İvme Akademi — Adımplan EdTech SaaS** projesindeki önemli sürüm değişikliklerini içerir.
+## [v1.8.1]
+
+### Eklenenler ve İyileştirmeler
+- **E-posta Doğrulama ve Auth Yönlendirme:** `emailRedirectTo`, PKCE (`code`) ve OTP (`token_hash`) doğrulama akışları eklendi.
+- **Şifre Sıfırlama Modalı:** `auth-callback.js` ile sayfa içi şifre sıfırlama modalı ve hata/bilgi uyarı banner'ı desteği eklendi.
+- **Vercel Auth Rewrite Kuralları:** `vercel.json` yapılandırmasına auth callback yönlendirme/rewrite kuralları eklendi.
+- **PWA Güncellemesi:** Service worker önbellek sürümü `adimplan-pwa-v21` olarak güncellendi.
+- **Playwright E2E Testleri:** `tests/test_frontend_e2e.py` dosyasına `auth-callback` PKCE yönlendirme ve hata uyarısı E2E testleri eklendi.
+
 ## [v1.8.0]
 
 ### Eklenenler ve İyileştirmeler

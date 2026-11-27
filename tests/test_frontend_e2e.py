@@ -792,3 +792,33 @@ def test_panel_idle_session_ends(frontend_url, name, key):
             page.mouse.move(40, 40)
             page.wait_for_url("**/login.html")
             assert page.evaluate("localStorage.getItem('ivme_user')") is None
+
+def test_auth_callback_index_pkce_redirects_to_login(frontend_url):
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            page = _offline_context(browser).new_page()
+            page_errors = []
+            page.on("pageerror", lambda exc: page_errors.append(str(exc)))
+            page.goto(f"{frontend_url}/index.html?code=test-pkce-123")
+            page.wait_for_url("**/login.html?code=test-pkce-123")
+            assert "login.html?code=test-pkce-123" in page.url
+            assert page_errors == []
+
+
+def test_auth_callback_login_error_banner_visible(frontend_url):
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            page = _offline_context(browser).new_page()
+            page_errors = []
+            page.on("pageerror", lambda exc: page_errors.append(str(exc)))
+            page.goto(
+                f"{frontend_url}/login.html?error=access_denied"
+                "&error_description=Email+link+is+invalid+or+has+expired"
+            )
+            page.wait_for_load_state("domcontentloaded")
+            alert = page.locator("#authAlert, #adimplanAuthNotice").first
+            alert.wait_for(state="visible", timeout=5000)
+            assert alert.is_visible()
+            assert alert.inner_text().strip() != ""
+            assert page_errors == []
+            
