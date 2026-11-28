@@ -42,6 +42,14 @@ var key=window.SUPABASE_ANON_KEY||cfg.supabaseAnonKey||cfg.SUPABASE_ANON_KEY||''
 if(url&&key&&window.supabase&&typeof window.supabase.createClient==='function'){return window.supabase.createClient(url,key);}
 return null;
 }
+function mapPasswordError(error){
+var code=error.code||'';var msg=error.message||'';
+if(code==='same_password'||/different from the old password/i.test(msg))return 'Yeni şifreniz eski şifrenizden farklı olmalıdır.';
+if(code==='weak_password'||/password should/i.test(msg))return 'Şifre yeterince güçlü değil. Daha uzun ve tahmin edilmesi zor bir şifre deneyin.';
+if(code==='session_not_found'||/session (missing|not found)/i.test(msg))return 'Oturumun süresi dolmuş. Yeni bir şifre sıfırlama bağlantısı isteyin.';
+if(error.status===429)return 'Çok fazla deneme yapıldı. Biraz bekleyip tekrar deneyin.';
+return 'Şifre güncellenemedi. Lütfen tekrar deneyin.';
+}
 var modalOpen=false;
 function openRecoveryModal(sb){
 if(modalOpen||document.getElementById('adimplanRecoveryModal'))return;
@@ -93,7 +101,7 @@ if(p1!==p2){errP.textContent='Şifreler eşleşmiyor.';errP.style.display='block
 saveBtn.disabled=true;saveBtn.textContent='Güncelleniyor...';errP.style.display='none';
 try{
 var res=await sb.auth.updateUser({password:p1});
-if(res&&res.error){errP.textContent=res.error.message||'Şifre güncellenemedi.';errP.style.display='block';saveBtn.disabled=false;saveBtn.textContent='Şifreyi Güncelle';return;}
+if(res&&res.error){errP.textContent=mapPasswordError(res.error);errP.style.display='block';saveBtn.disabled=false;saveBtn.textContent='Şifreyi Güncelle';return;}
 overlay.remove();modalOpen=false;cleanUrl();
 showNotice('Şifreniz başarıyla güncellendi, şimdi giriş yapabilirsiniz.',false);
 }catch(err){

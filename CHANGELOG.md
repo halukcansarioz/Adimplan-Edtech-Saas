@@ -2,6 +2,11 @@
 
 Bu dosya **İvme Akademi — Adımplan EdTech SaaS** projesindeki önemli sürüm değişikliklerini içerir.
 
+## [v2.2.2]
+
+### Düzeltmeler
+- **Şifre Yenileme Uyarıları:** Şifre güncelleme hataları Türkçe gösteriliyor. Service worker önbelleği `adimplan-pwa-v27` oldu.
+
 ## [v2.2.1]
 
 ### Düzeltmeler
