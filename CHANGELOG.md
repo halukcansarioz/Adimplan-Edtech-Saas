@@ -2,6 +2,14 @@
 
 Bu dosya **İvme Akademi — Adımplan EdTech SaaS** projesindeki önemli sürüm değişikliklerini içerir.
 
+## [v2.1.1]
+
+### Güvenlik ve Altyapı
+- **CodeQL Güvenlik Düzeltmeleri (PR #55):** CodeQL #1 ve #5 güvenlik uyarıları giderildi ve iş akışı `CodeQL Action v4` sürümüne yükseltildi.
+- **Yönlendirme ve Dokümantasyon (PR #55):** `/reset-password` rewrite kuralı eklendi ve `README.md` hizalandı.
+- **Veritabanı Migrasyonu:** Çift `006_` önek çakışmasını gidermek için `supabase/migrations/006_full_panels_rls.sql` dosyası `009_full_panels_rls.sql` olarak yeniden adlandırıldı.
+- **Docker Compose:** `backend` servisine opsiyonel `.env` yüklemesi ve `SUPABASE_URL`/`SUPABASE_ANON_KEY` ortam değişkenleri eklendi; `8080` portunda `frontend/` statik önizleme servisi (`python:3.11-slim`) tanımlandı.
+  
 ## [v2.2.3]
 
 ### Düzeltmeler
