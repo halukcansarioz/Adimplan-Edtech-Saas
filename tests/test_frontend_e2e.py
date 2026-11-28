@@ -908,3 +908,30 @@ def test_student_sections_are_inside_main_and_toolbar_collapses(frontend_url):
             assert not pomodoro.is_visible()
             toggle.click()
             assert pomodoro.is_visible()
+
+
+@pytest.mark.parametrize(
+    "code,message,expected",
+    [
+        ("invalid_credentials", "Invalid login credentials", "E-posta veya şifre hatalı."),
+        ("unknown_code", "Something unexpected", "Giriş sırasında bir hata oluştu."),
+    ],
+)
+def test_login_errors_are_shown_in_turkish(frontend_url, code, message, expected):
+    stub = (
+        "window.supabase = {createClient: () => ({auth: {"
+        "onAuthStateChange: () => {},"
+        "signInWithPassword: async () => ({error: {name: 'AuthApiError', status: 400,"
+        f"code: '{code}', message: '{message}'}}}})}}}})}};"
+    )
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            page = browser.new_context(service_workers="block").new_page()
+            page.route(lambda u: not u.startswith("http://127.0.0.1"), lambda r: r.abort())
+            page.route("**/cdn.jsdelivr.net/**", lambda r: r.fulfill(body=stub, content_type="application/javascript"))
+            page.goto(f"{frontend_url}/login.html")
+            page.fill("#loginEmail", "a@example.com")
+            page.fill("#loginPassword", "secret123")
+            page.click("#loginSubmit")
+            page.locator("#authAlert.show").wait_for()
+            assert page.inner_text("#authAlert") == expected

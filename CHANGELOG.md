@@ -2,6 +2,11 @@
 
 Bu dosya **İvme Akademi — Adımplan EdTech SaaS** projesindeki önemli sürüm değişikliklerini içerir.
 
+## [v2.2.3]
+
+### Düzeltmeler
+- **Giriş ve Kayıt Uyarıları:** Giriş, kayıt ve şifre sıfırlama isteğindeki Supabase hataları Türkçe gösteriliyor. Service worker önbelleği `adimplan-pwa-v28` oldu.
+
 ## [v2.2.2]
 
 ### Düzeltmeler
