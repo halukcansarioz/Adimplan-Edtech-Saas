@@ -935,3 +935,29 @@ def test_login_errors_are_shown_in_turkish(frontend_url, code, message, expected
             page.click("#loginSubmit")
             page.locator("#authAlert.show").wait_for()
             assert page.inner_text("#authAlert") == expected
+
+
+@pytest.mark.parametrize(
+    "session,latest,expected,form_visible",
+    [
+        ("null", "[]", "giriş yapın", False),
+        ("{user: {id: 'u1'}}", "[]", "onaylandıktan sonra", True),
+        ("{user: {id: 'u1'}}", "[{org_name: 'Rota', status: 'pending'}]", "onay bekliyor", False),
+        ("{user: {id: 'u1'}}", "[{org_name: 'Rota', status: 'rejected'}]", "onaylanmadı", True),
+    ],
+)
+def test_organization_request_page_states(frontend_url, session, latest, expected, form_visible):
+    stub = (
+        "window.supabase = {createClient: () => ({"
+        f"auth: {{getSession: async () => ({{data: {{session: {session}}}}})}},"
+        "from: () => ({select: () => ({eq: () => ({limit: async () => ({data: []})})})}),"
+        f"rpc: async () => ({{data: {latest}}})}})}};"
+    )
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            page = browser.new_context(service_workers="block").new_page()
+            page.route(lambda u: not u.startswith("http://127.0.0.1"), lambda r: r.abort())
+            page.route("**/cdn.jsdelivr.net/**", lambda r: r.fulfill(body=stub, content_type="application/javascript"))
+            page.goto(f"{frontend_url}/kurum-basvuru.html")
+            page.get_by_text(expected).wait_for()
+            assert page.locator("#requestForm").is_visible() == form_visible

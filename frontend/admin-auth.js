@@ -72,8 +72,20 @@
     if (token) call('/auth/v1/logout?scope=local', { method: 'POST' }, token).catch(() => {});
   }
 
+  // Yetki her çağrıda veritabanında yeniden denetlenir; burada yalnızca oturum eklenir.
+  async function rpc(kind, name, args) {
+    const token = sessionStorage.getItem(storeKey(kind));
+    if (!token) throw new Error('Oturum süresi doldu. Tekrar giriş yapın.');
+    const res = await call('/rest/v1/rpc/' + name, { method: 'POST', body: JSON.stringify(args || {}) }, token);
+    if (res.status === 401) throw new Error('Oturum süresi doldu. Tekrar giriş yapın.');
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : null;
+    if (!res.ok) throw new Error((data && data.message) || 'İşlem tamamlanamadı.');
+    return data;
+  }
+
   // Eski sürümün düz metin yönetici şifresini tarayıcıdan sil.
   localStorage.removeItem('ivme_admin_pass');
 
-  window.AdminAuth = { login, restore, logout };
+  window.AdminAuth = { login, restore, logout, rpc };
 })();

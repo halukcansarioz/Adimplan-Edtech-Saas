@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Kurum Başvurusu — İvme Akademi</title>
+<link rel="icon" type="image/svg+xml" href="./favicon.svg">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#F8FAFC;color:#0F172A;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;line-height:1.5}
+.card{width:100%;max-width:440px;background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:28px}
+h1{font-size:1.35rem;margin-bottom:8px}
+p{color:#475569;font-size:.92rem;margin-bottom:16px}
+label{display:block;font-size:.85rem;font-weight:600;margin-bottom:6px}
+input{width:100%;padding:11px 12px;border:1px solid #CBD5E1;border-radius:10px;font:inherit;margin-bottom:14px}
+.btn{display:block;width:100%;padding:12px;border:0;border-radius:10px;background:#4F46E5;color:#fff;font:600 .95rem system-ui,sans-serif;text-align:center;text-decoration:none;cursor:pointer}
+.btn:disabled{opacity:.6}
+#message{margin:14px 0 0;color:#B91C1C}
+.hidden{display:none}
+.back{display:block;margin-top:16px;text-align:center;font-size:.85rem;color:#4F46E5}
+</style>
+</head>
+<body>
+<main class="card">
+<h1>Kurum Başvurusu</h1>
+<p id="status" role="status">Kontrol ediliyor…</p>
+<a id="loginLink" class="btn hidden" href="./login.html">Giriş yap</a>
+<form id="requestForm" class="hidden">
+<label for="orgName">Kurum veya koçluk adı</label>
+<input id="orgName" required minlength="2" maxlength="80" autocomplete="organization">
+<button class="btn" id="send" type="submit">Başvur</button>
+</form>
+<p id="message" role="alert"></p>
+<a class="back" href="./index.html">Ana sayfaya dön</a>
+</main>
+<script src="./config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var ERRORS = {
+    not_signed_in: 'Önce giriş yapın.',
+    email_not_confirmed: 'Başvurmadan önce e-posta adresinizi doğrulayın.',
+    invalid_name: 'Kurum adı 2 ile 80 karakter arasında olmalı.',
+    already_member: 'Hesabınız zaten bir kuruma bağlı.',
+    already_pending: 'Bekleyen bir başvurunuz zaten var.'
+  };
+  function show(id, visible) { $(id).classList.toggle('hidden', !visible); }
+  function fail(error) {
+    $('message').textContent = ERRORS[error && error.message] || 'İşlem tamamlanamadı. Daha sonra tekrar deneyin.';
+  }
+  var cfg = window.ADIMPLAN_CONFIG;
+  if (!window.supabase || !cfg) { $('status').textContent = 'Sayfa yüklenemedi. Bağlantınızı kontrol edip yenileyin.'; return; }
+  var sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+
+  async function refresh() {
+    var session = (await sb.auth.getSession()).data.session;
+    if (!session) {
+      sessionStorage.setItem('adimplan_next', 'kurum-basvuru.html');
+      $('status').textContent = 'Başvurmak için hesabınızla giriş yapın.';
+      show('loginLink', true);
+      return;
+    }
+    var member = await sb.from('memberships').select('role').eq('user_id', session.user.id).limit(1);
+    if (member.error) throw member.error;
+    if (member.data.length) {
+      $('status').textContent = 'Hesabınız bir kuruma bağlı. Yeni başvuru gerekmiyor.';
+      show('requestForm', false);
+      return;
+    }
+    var result = await sb.rpc('my_organization_request');
+    if (result.error) throw result.error;
+    var latest = result.data && result.data[0];
+    if (latest && latest.status === 'pending') {
+      $('status').textContent = '“' + latest.org_name + '” için başvurunuz onay bekliyor.';
+      show('requestForm', false);
+      return;
+    }
+    $('status').textContent = latest && latest.status === 'rejected'
+      ? 'Önceki başvurunuz onaylanmadı. Yeniden başvurabilirsiniz.'
+      : 'Kurumunuz, başvurunuz onaylandıktan sonra açılır.';
+    show('requestForm', true);
+  }
+
+  $('requestForm').addEventListener('submit', async function (event) {
+    event.preventDefault();
+    $('message').textContent = '';
+    $('send').disabled = true;
+    try {
+      var result = await sb.rpc('request_organization', { p_name: $('orgName').value });
+      if (result.error) throw result.error;
+      await refresh();
+    } catch (error) {
+      fail(error);
+    } finally {
+      $('send').disabled = false;
+    }
+  });
+
+  refresh().catch(function (error) { $('status').textContent = ''; fail(error); });
+})();
+</script>
+</body>
+</html>
