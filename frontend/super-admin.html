@@ -9,7 +9,7 @@
 <script src="./admin-auth.js?v=1"></script>
 <script>(function(){const SUB_KEY='ivme_saas_subs_v1',CMS_KEY='ivme_landing_cms_v1';const PRICES={'Deneme':0,'Başlangıç':499,'Profesyonel':999,'Kurumsal':2499};const DEFAULT_SUBS=[{id:1,name:'Atılım YKS Akademi',email:'info@atilim.com',plan:'Profesyonel',status:'Aktif',students:64,trialEnd:'2026-12-10'},{id:2,name:'Koçluk Merkezi İstanbul',email:'koc@merkez.com',plan:'Kurumsal',status:'Aktif',students:180,trialEnd:'2026-12-15'},{id:3,name:'Doruk Eğitim',email:'destek@doruk.com',plan:'Başlangıç',status:'Aktif',students:28,trialEnd:'2026-12-01'},{id:4,name:'Zirve LGS Koçluk',email:'merhaba@zirvelgs.com',plan:'Deneme',status:'Deneme',students:14,trialEnd:'2026-12-08'},{id:5,name:'Bireysel Koç Elif Y.',email:'elif@koc.com',plan:'Deneme',status:'Deneme',students:9,trialEnd:'2026-12-04'},{id:6,name:'Kuzey Etüt',email:'iletisim@kuzey.com',plan:'Başlangıç',status:'Salt-Okunur',students:22,trialEnd:'2026-11-15'}];const DEFAULT_CMS={heroTitle:'Koçluğunu Büyüt. Her Öğrenciyi Tek Panelden Yönet.',heroSlogan:'Veriyle planla, istikrarla yüksel.',heroDesc:'Haftalık çalışma programı, akıllı deneme analizi, ödev takibi, veli rapor ve koç finansmanı – hepsi modern tek bir platformda.',motivText:'Net hedefler, ölçülebilir gelişim. · Her deneme yeni bir başlangıç. · İvmeni kaybetme.',starterPrice:'₺499',proPrice:'₺999',contactEmail:'iletisim@ivmeakademi.com',sections:{roadmap:true,features:true,corporate:true,preview:true,pricing:true,faq:true}};
 let subs=[],filterSt='Tümü';const $=id=>document.getElementById(id);
-function toast(msg){const t=$('toast');t.textContent=msg;t.classList.remove('hidden');clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.add('hidden'),2600);}
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.remove('hidden');clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.add('hidden'),2600);}const escapeHtml=esc;
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function loadSubs(){try{const r=localStorage.getItem(SUB_KEY);subs=r?JSON.parse(r):DEFAULT_SUBS.slice();if(!Array.isArray(subs))subs=DEFAULT_SUBS.slice();}catch(e){subs=DEFAULT_SUBS.slice();}saveSubs();}
 function saveSubs(){localStorage.setItem(SUB_KEY,JSON.stringify(subs));}
@@ -21,8 +21,32 @@ $('logoutBtn').onclick=()=>{AdminAuth.logout('platform');$('app').classList.add(
 document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');const t=b.dataset.tab;$('tab-subs').classList.toggle('hidden',t!=='subs');$('tab-cms').classList.toggle('hidden',t!=='cms');});
 function render(){const activePaid=subs.filter(s=>s.status==='Aktif'&&PRICES[s.plan]>0);const mrr=activePaid.reduce((a,s)=>a+(PRICES[s.plan]||0),0);const trials=subs.filter(s=>s.status==='Deneme').length;const studs=subs.filter(s=>s.status==='Aktif'||s.status==='Deneme').reduce((a,s)=>a+(Number(s.students)||0),0);$('k-mrr').textContent='₺'+mrr.toLocaleString('tr-TR');$('k-paid').textContent=activePaid.length;$('k-trial').textContent=trials;$('k-students').textContent=studs;renderChart();renderTable();}
 function renderChart(){const keys=['Deneme','Başlangıç','Profesyonel','Kurumsal'];const colors=['#F59E0B','#38BDF8','#4F46E5','#10B981'];const labels=['Deneme','Başlangıç ₺499','Profesyonel ₺999','Kurumsal'];const counts=keys.map(k=>subs.filter(s=>s.plan===k).length);const cv=$('planChart'),ctx=cv.getContext('2d');ctx.clearRect(0,0,cv.width,cv.height);const total=counts.reduce((a,b)=>a+b,0)||1;let ang=-Math.PI/2;counts.forEach((v,i)=>{if(!v)return;const slice=(v/total)*Math.PI*2;ctx.beginPath();ctx.arc(105,105,86,ang,ang+slice);ctx.arc(105,105,52,ang+slice,ang,true);ctx.closePath();ctx.fillStyle=colors[i];ctx.fill();ang+=slice;});ctx.fillStyle='#F8FAFC';ctx.font='700 22px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(subs.length),105,100);ctx.fillStyle='#94A3B8';ctx.font='11px sans-serif';ctx.fillText('Abone',105,120);$('planLegend').innerHTML=labels.map((l,i)=>`<div class="leg-item"><span class="leg-dot" style="background:${colors[i]}"></span><span>${l}: <b>${counts[i]}</b></span></div>`).join('');}
-function renderTable(){const q=$('searchBox').value.trim().toLowerCase();const rows=subs.filter(s=>(filterSt==='Tümü'||s.status===filterSt)&&(!q||s.name.toLowerCase().includes(q)||s.email.toLowerCase().includes(q)));const tb=$('subBody');tb.innerHTML=rows.map(s=>`<tr><td><div style="font-weight:600">${esc(s.name)}</div><div style="font-size:11px;color:var(--muted)">${esc(s.email)}</div></td><td><select class="select" style="width:130px;padding:5px 8px;font-size:12px" data-act="plan" data-id="${s.id}">${['Deneme','Başlangıç','Profesyonel','Kurumsal'].map(p=>`<option value="${p}"${s.plan===p?' selected':''}>${p}</option>`).join('')}</select></td><td class="mono">₺${PRICES[s.plan]||0}</td><td><select class="select" style="width:125px;padding:5px 8px;font-size:12px" data-act="status" data-id="${s.id}">${['Aktif','Deneme','Salt-Okunur','İptal'].map(st=>`<option value="${st}"${s.status===st?' selected':''}>${st}</option>`).join('')}</select></td><td class="mono">${s.students}</td><td class="mono">${esc(s.trialEnd||'-')}</td><td><button class="btn btn-ghost btn-sm" data-act="extend" data-id="${s.id}">+7 Gün Deneme Uzat</button></td></tr>`).join('');}
-$('subBody').onchange=e=>{const el=e.target,id=Number(el.dataset.id),sub=subs.find(x=>x.id===id);if(!sub)return;if(el.dataset.act==='plan'){sub.plan=el.value;saveSubs();render();toast('Paket güncellendi');}if(el.dataset.act==='status'){sub.status=el.value;saveSubs();render();toast('Durum güncellendi');}};
+function renderTable() {  
+  const q = $('searchBox').value.trim().toLowerCase();
+ const rows = subs.filter(function(s) {
+return (filterSt === 'Tümü' || s.status === filterSt) && (!q || s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q));
+});
+const tb = $('subBody');
+tb.innerHTML = rows.map(function(s) {
+const planOpts = ['Deneme', 'Başlangıç', 'Profesyonel', 'Kurumsal'].map(function(p) {
+return '<option value="' + escapeHtml(p) + '"' + (s.plan === p ? ' selected' : '') + '>' + escapeHtml(p) + '</option>';
+}).join('');
+const statusOpts = ['Aktif', 'Deneme', 'Salt-Okunur', 'İptal'].map(function(st) {
+return '<option value="' + escapeHtml(st) + '"' + (s.status === st ? ' selected' : '') + '>' + escapeHtml(st) + '</option>';
+}).join('');
+return '<tr>' +
+'<td><div style="font-weight:600">' + escapeHtml(s.name) + '</div>' +
+'<div style="font-size:11px;color:var(--muted)">' + escapeHtml(s.email) + '</div></td>' +
+'<td><select class="select" style="width:130px;padding:5px 8px;font-size:12px" data-act="plan" data-id="' + escapeHtml(s.id) + '">' + planOpts + '</select></td>' +
+'<td class="mono">₺' + escapeHtml(PRICES[s.plan] || 0) + '</td>' +
+'<td><select class="select" style="width:125px;padding:5px 8px;font-size:12px" data-act="status" data-id="' + escapeHtml(s.id) + '">' + statusOpts + '</select></td>' +
+'<td class="mono">' + escapeHtml(s.students) + '</td>' +
+'<td class="mono">' + escapeHtml(s.trialEnd || '-') + '</td>' +
+'<td><button class="btn btn-ghost btn-sm" data-act="extend" data-id="' + escapeHtml(s.id) + '">+7 Gün Deneme Uzat</button></td>' +
+'</tr>';
+}).join('');
+}
+                    $('subBody').onchange=e=>{const el=e.target,id=Number(el.dataset.id),sub=subs.find(x=>x.id===id);if(!sub)return;if(el.dataset.act==='plan'){sub.plan=el.value;saveSubs();render();toast('Paket güncellendi');}if(el.dataset.act==='status'){sub.status=el.value;saveSubs();render();toast('Durum güncellendi');}};
 $('subBody').onclick=e=>{const btn=e.target.closest('[data-act="extend"]');if(!btn)return;const sub=subs.find(x=>x.id===Number(btn.dataset.id));if(!sub)return;const d=new Date(sub.trialEnd||Date.now());d.setDate(d.getDate()+7);sub.trialEnd=d.toISOString().slice(0,10);saveSubs();render();toast('Deneme süresi +7 gün uzatıldı');};
 $('statusPills').onclick=e=>{const p=e.target.closest('.pill');if(!p)return;filterSt=p.dataset.st;document.querySelectorAll('.pill').forEach(x=>x.classList.toggle('active',x===p));renderTable();};
 $('searchBox').oninput=renderTable;

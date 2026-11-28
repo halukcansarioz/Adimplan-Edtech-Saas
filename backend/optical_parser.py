@@ -1,9 +1,10 @@
 import csv
 import io
 import json
+import logging
 from typing import Any, Dict, List
 
-
+logger = logging.getLogger(__name__)
 REQUIRED_COLUMNS = ("student_name", "subject", "topic", "correct", "wrong", "empty")
 
 
@@ -113,11 +114,12 @@ def parse_optical_csv(csv_content: str) -> Dict[str, Any]:
                 }
             )
         except ValueError as exc:
+            logger.warning("Optical CSV row parse error at line %s: %s", line_num, exc)
             errors.append(
                 {
                     "line": line_num,
                     "row": row,
-                    "error": str(exc),
+                    "error": "Invalid row data.",
                 }
             )
 

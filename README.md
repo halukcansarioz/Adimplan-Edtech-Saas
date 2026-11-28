@@ -1,4 +1,4 @@
-# 🚀 Adimplan — EdTech Coaching SaaS (v2.0.0)
+# 🚀 Adimplan — EdTech Coaching SaaS (v2.1.0)
 
 [![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
@@ -9,7 +9,7 @@
 
 ---
 
-Multi-tenant EdTech coaching and student tracking SaaS (**v1.0**) featuring **27 coaching & institutional modules**, **5 Supabase PostgreSQL Row-Level Security (RLS) migrations (`001`–`005`)**, a **rate-limited & SHA-256 cached FastAPI** analytics backend, an **Optical CSV Parser**, **PWA offline support (`sw.js`)**, and **Playwright desktop + 390px mobile E2E CI tests**.
+Multi-tenant EdTech coaching and student tracking SaaS (**v1.0**) featuring **27 coaching & institutional modules**, **9 Supabase PostgreSQL Row-Level Security (RLS) migrations (`001`–`008`)**, a **rate-limited & SHA-256 cached FastAPI** analytics backend, an **Optical CSV Parser**, **PWA offline support (`sw.js`)**, and **Playwright desktop + 390px mobile E2E CI tests**.
 
 > 🚀 **Live Demo:** **[https://adimplan.vercel.app/](https://adimplan.vercel.app/)**
 
@@ -41,11 +41,12 @@ Multi-tenant EdTech coaching and student tracking SaaS (**v1.0**) featuring **27
 | **Pricing** | `/pricing.html` | Subscription plans & pricing (Fiyatlandırma) |
 | **Parent Report** | `/parent-report.html` | Shareable weekly parent report (Paylaşılabilir Haftalık Veli Raporu) |
 | **Optical Reader** | `/optical-reader.html` | Interactive optical reader & scoring (Etkileşimli Optik Okuyucu & Puanlama) |
+| **Reset Password** | `/reset-password.html` | Password reset & recovery flow (Şifre Sıfırlama) |
 ---
 
 # 📌 About the Project
 
-**İvme Akademi EdTech SaaS (v1.0)** is a full-stack educational coaching platform designed for multi-tenant institutions, coaches, students, and parents. It combines strict database-level tenant isolation via 5 Supabase PostgreSQL RLS migrations (`001`–`005`), high-performance rate-limited and SHA-256 cached REST endpoints in FastAPI (`backend/main.py`), automated optical exam CSV ingestion (`backend/optical_parser.py`), and a 27-module responsive PWA frontend (`frontend/`).
+**İvme Akademi EdTech SaaS (v1.0)** is a full-stack educational coaching platform designed for multi-tenant institutions, coaches, students, and parents. It combines strict database-level tenant isolation via 9 Supabase PostgreSQL RLS migrations (`001`–`008`), high-performance rate-limited and SHA-256 cached REST endpoints in FastAPI (`backend/main.py`), automated optical exam CSV ingestion (`backend/optical_parser.py`), and a 27-module responsive PWA frontend (`frontend/`).
 
 ---
 
@@ -59,7 +60,7 @@ Multi-tenant EdTech coaching and student tracking SaaS (**v1.0**) featuring **27
 - **8 Sınav Türü Konu Ağacı:** 8 farklı sınav türü için yapılandırılmış müfredat ve konu ilerleme ağacı.
 - **Hata Kök Nedeni Analizi:** Yanlış ve boş soruların konu/beceri bazlı kök neden analizi.
 - **Koç Devir Aracı:** Öğrencilerin ve koçluk geçmişinin kurum içi başka bir koça güvenli devri.
-- **5 Supabase RLS Migrasyonu (`001`–`005`):**
+- **9 Supabase RLS Migrasyonu (`001`–`008`):**
   - `supabase/migrations/001_initial_schema_rls.sql`
   - `supabase/migrations/002_full_27_modules_rls.sql`
   - `supabase/migrations/003_workspace_snapshots.sql`
@@ -74,7 +75,7 @@ Multi-tenant EdTech coaching and student tracking SaaS (**v1.0**) featuring **27
 
 * **Frontend:** Vanilla HTML5, CSS3, JavaScript (27 Modules, Chart.js, SVG Progress Rings, PWA `sw.js`, Dark/Light Theme Sync)
 * **Backend:** Python 3.11, FastAPI, Uvicorn (Rate Limiting & SHA-256 Response Caching)
-* **Database & Auth:** Supabase (PostgreSQL with Row-Level Security — Migrations `001`–`005`)
+* **Database & Auth:** Supabase (PostgreSQL with Row-Level Security — Migrations `001`–`008`)
 * **Testing & CI:** `pytest`, Playwright E2E (Desktop + 390px Mobile), GitHub Actions (`test` & `frontend-e2e`)
 * **Deployment:** Vercel (Frontend) & Render (Backend)
 
