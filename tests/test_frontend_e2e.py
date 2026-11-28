@@ -860,3 +860,34 @@ def test_optical_reader_loads_and_scores(frontend_url):
             assert "Ahmet Yılmaz" in page.locator("#resultsBody").inner_text()
             assert page_errors == []
 
+
+
+@pytest.mark.parametrize("google_enabled", [True, False])
+def test_google_button_follows_supabase_provider_setting(frontend_url, google_enabled):
+    stub = (
+        "window.supabase = {createClient: () => ({auth: {"
+        "onAuthStateChange: () => {},"
+        "signInWithOAuth: async (o) => { window.__oauth = o; return {}; }}})};"
+    )
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            page = browser.new_context(service_workers="block").new_page()
+            page.route("**/cdn.jsdelivr.net/**", lambda r: r.fulfill(body=stub, content_type="application/javascript"))
+            page.route(
+                "**/auth/v1/settings",
+                lambda r: r.fulfill(
+                    json={"external": {"google": google_enabled}},
+                    headers={"access-control-allow-origin": "*", "access-control-allow-headers": "*"},
+                ),
+            )
+            with page.expect_response("**/auth/v1/settings"):
+                page.goto(f"{frontend_url}/login.html")
+            button = page.locator("#googleBtn")
+            if not google_enabled:
+                page.wait_for_timeout(300)
+                assert not button.is_visible()
+                return
+            button.click()
+            options = page.evaluate("window.__oauth")
+            assert options["provider"] == "google"
+            assert options["options"]["redirectTo"] == f"{frontend_url}/login.html"
