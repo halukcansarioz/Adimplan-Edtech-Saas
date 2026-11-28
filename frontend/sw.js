@@ -1,4 +1,4 @@
-const CACHE_NAME = 'adimplan-pwa-v23';
+const CACHE_NAME = 'adimplan-pwa-v24';
 const PRECACHE_URLS = [
   './', './index.html',
   './login.html',

@@ -2,6 +2,13 @@
 
 Bu dosya **İvme Akademi — Adımplan EdTech SaaS** projesindeki önemli sürüm değişikliklerini içerir.
 
+## [v2.1.1]
+
+### Düzeltmeler
+- **Veli E-postası:** Resend isteğine `User-Agent` başlığı eklendi (başlıksız istekler 403 / 1010 ile reddediliyor). Boş `RESEND_FROM_EMAIL` artık varsayılan göndericiye düşüyor.
+- **Şifre Sıfırlama:** Giriş sayfasındaki ikinci (`prompt`) sıfırlama akışı kaldırıldı; `login.html` ve `auth-callback.js` tek Supabase istemcisi kullanıyor.
+- **E-posta Kurulumu:** `supabase/EMAIL_SETUP.md` eklendi (yönlendirme adresleri ve özel SMTP). Service worker önbelleği `adimplan-pwa-v24` oldu.
+
 ## [v2.1.0]
 
 ### Eklenenler ve İyileştirmeler

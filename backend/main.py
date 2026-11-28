@@ -488,7 +488,7 @@ def notify_parent_email(request: Request, payload: ParentEmailRequest):
             detail="E-posta gonderimi kapali: sunucuda SUPABASE_URL ve SUPABASE_ANON_KEY tanimlanmali.",
         )
 
-    from_email = os.getenv("RESEND_FROM_EMAIL", "Adimplan <noreply@adimplan.com>")
+    from_email = os.getenv("RESEND_FROM_EMAIL", "").strip() or "Adimplan <noreply@adimplan.com>"
     body = json.dumps({
         "from": from_email,
         "to": [payload.parent_email],
@@ -502,6 +502,8 @@ def notify_parent_email(request: Request, payload: ParentEmailRequest):
         headers={
             "Authorization": f"Bearer {resend_api_key}",
             "Content-Type": "application/json",
+            # Resend rejects urllib's default agent with 403 (error 1010).
+            "User-Agent": "adimplan-api/1.4.0",
         },
         method="POST",
     )

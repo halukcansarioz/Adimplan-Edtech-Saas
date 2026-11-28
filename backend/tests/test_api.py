@@ -282,6 +282,28 @@ def test_auth_allows_coach(monkeypatch):
     assert res.json()["status"] == "dry_run"
 
 
+def test_real_email_request_sends_user_agent(monkeypatch):
+    """Resend answers 403 (error 1010) to urllib's default User-Agent."""
+    import io
+    import main
+
+    _use_supabase(monkeypatch, [{"role": "coach"}])
+    monkeypatch.setenv("RESEND_API_KEY", "test-key")
+    monkeypatch.setenv("RESEND_FROM_EMAIL", "")
+    sent = []
+
+    def fake_urlopen(req, timeout=None):
+        sent.append(req)
+        return io.BytesIO(b'{"id": "mail-1"}')
+
+    monkeypatch.setattr(main.urllib.request, "urlopen", fake_urlopen)
+    res = client.post("/api/notify/parent-email", headers={"Authorization": "Bearer good"}, json=EMAIL_BODY)
+    assert res.status_code == 200
+    assert res.json()["status"] == "sent"
+    assert sent[0].get_header("User-agent") == "adimplan-api/1.4.0"
+    assert json.loads(sent[0].data)["from"] == "Adimplan <noreply@adimplan.com>"
+
+
 def test_real_email_is_refused_without_auth_configuration(monkeypatch):
     import main
 
