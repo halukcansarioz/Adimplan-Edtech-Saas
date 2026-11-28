@@ -31,6 +31,7 @@ input{width:100%;padding:11px 12px;border:1px solid #CBD5E1;border-radius:10px;f
 <button class="btn" id="send" type="submit">Başvur</button>
 </form>
 <p id="message" role="alert"></p>
+<a id="inviteLink" class="back hidden" href="./davet.html">Koç veya öğrenci davet et</a>
 <a class="back" href="./index.html">Ana sayfaya dön</a>
 </main>
 <script src="./config.js"></script>
@@ -67,6 +68,7 @@ input{width:100%;padding:11px 12px;border:1px solid #CBD5E1;border-radius:10px;f
     if (member.data.length) {
       $('status').textContent = 'Hesabınız bir kuruma bağlı. Yeni başvuru gerekmiyor.';
       show('requestForm', false);
+      show('inviteLink', member.data[0].role !== 'student');
       return;
     }
     var result = await sb.rpc('my_organization_request');
