@@ -47,3 +47,10 @@ Yetkiyi geri almak için ilgili `memberships` satırını silin veya
 içindeki **Kurum Başvuruları** sekmesinden onaylanır; bunun için hesabınızda
 `platform_admin` yetkisi bulunmalıdır (yukarıdaki 2. adım). Onay, kurumu
 oluşturur ve başvuranı `owner` yapar.
+
+## Davetler
+
+`migrations/011_invitations.sql` uygulandıktan sonra kurum sahibi ve koçlar
+`/davet.html` sayfasından davet bağlantısı oluşturur. Bağlantı otomatik e-posta
+ile gönderilmez; elle iletilir. Yalnızca yazılan e-postanın doğrulanmış hesabı
+kabul edebilir, 7 gün geçerlidir ve tek kullanımlıktır.

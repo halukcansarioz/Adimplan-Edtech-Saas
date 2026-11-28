@@ -961,3 +961,18 @@ def test_organization_request_page_states(frontend_url, session, latest, expecte
             page.goto(f"{frontend_url}/kurum-basvuru.html")
             page.get_by_text(expected).wait_for()
             assert page.locator("#requestForm").is_visible() == form_visible
+
+
+def test_invite_token_leaves_address_bar_and_survives_login(frontend_url):
+    token = "a" * 64
+    stub = "window.supabase = {createClient: () => ({auth: {getSession: async () => ({data: {session: null}})}})};"
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            page = browser.new_context(service_workers="block").new_page()
+            page.route(lambda u: not u.startswith("http://127.0.0.1"), lambda r: r.abort())
+            page.route("**/cdn.jsdelivr.net/**", lambda r: r.fulfill(body=stub, content_type="application/javascript"))
+            page.goto(f"{frontend_url}/davet.html#davet={token}")
+            page.get_by_text("davet edilen e-posta").wait_for()
+            assert token not in page.url
+            assert page.evaluate("sessionStorage.getItem('adimplan_invite')") == token
+            assert page.evaluate("sessionStorage.getItem('adimplan_next')") == "davet.html"

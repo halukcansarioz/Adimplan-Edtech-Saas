@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
+<title>Davet — İvme Akademi</title>
+<link rel="icon" type="image/svg+xml" href="./favicon.svg">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#F8FAFC;color:#0F172A;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;line-height:1.5}
+.card{width:100%;max-width:440px;background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:28px}
+h1{font-size:1.35rem;margin-bottom:8px}
+p{color:#475569;font-size:.92rem;margin-bottom:16px}
+label{display:block;font-size:.85rem;font-weight:600;margin-bottom:6px}
+input{width:100%;padding:11px 12px;border:1px solid #CBD5E1;border-radius:10px;font:inherit;margin-bottom:14px}
+.btn{display:block;width:100%;padding:12px;border:0;border-radius:10px;background:#4F46E5;color:#fff;font:600 .95rem system-ui,sans-serif;text-align:center;text-decoration:none;cursor:pointer}
+.btn:disabled{opacity:.6}
+#message{margin:14px 0 0;color:#B91C1C}
+.hidden{display:none}
+.back{display:block;margin-top:16px;text-align:center;font-size:.85rem;color:#4F46E5}
+select{width:100%;padding:11px 12px;border:1px solid #CBD5E1;border-radius:10px;font:inherit;margin-bottom:14px;background:#fff}
+li{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #E2E8F0;font-size:.85rem;overflow-wrap:anywhere}
+ul{list-style:none;margin-top:16px}
+li button{border:0;background:none;color:#B91C1C;font-weight:600;cursor:pointer}
+</style>
+</head>
+<body>
+<main class="card">
+<h1 id="title">Davet</h1>
+<p id="status" role="status">Kontrol ediliyor…</p>
+<a id="loginLink" class="btn hidden" href="./login.html">Giriş yap veya kayıt ol</a>
+<button id="accept" class="btn hidden" type="button">Daveti kabul et</button>
+<button id="switchAccount" class="btn hidden" type="button" style="margin-top:10px;background:#475569">Başka hesapla giriş yap</button>
+<form id="inviteForm" class="hidden">
+<label for="inviteEmail">Davet edilecek e-posta</label>
+<input id="inviteEmail" type="email" required maxlength="254" autocomplete="off">
+<label for="inviteRole">Rol</label>
+<select id="inviteRole"></select>
+<div id="studentBox" class="hidden">
+<label for="inviteStudent">Mevcut öğrenci kaydı</label>
+<select id="inviteStudent"></select>
+</div>
+<button class="btn" id="create" type="submit">Davet bağlantısı oluştur</button>
+</form>
+<div id="linkBox" class="hidden">
+<label for="inviteLink" style="margin-top:14px">Bu bağlantıyı davet ettiğiniz kişiye gönderin. Yalnızca şimdi gösterilir, 7 gün geçerlidir.</label>
+<input id="inviteLink" readonly>
+<button class="btn" id="copy" type="button">Bağlantıyı kopyala</button>
+</div>
+<p id="message" role="alert"></p>
+<ul id="pending"></ul>
+<a class="back" href="./index.html">Ana sayfaya dön</a>
+</main>
+<script src="./config.js"></script>
+<script>
+// Davet kodu adres çubuğunda kalmasın; girişten dönünce bu sekmede hatırlanır.
+(function () {
+  var match = /^#davet=([0-9a-f]{64})$/.exec(location.hash);
+  if (match) { sessionStorage.setItem('adimplan_invite', match[1]); history.replaceState(null, '', location.pathname); }
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var ERRORS = {
+    not_signed_in: 'Önce giriş yapın.',
+    email_not_confirmed: 'Önce e-posta adresinizi doğrulayın.',
+    invalid_invitation: 'Bu davet geçersiz, süresi dolmuş veya daha önce kullanılmış. Yeni davet isteyin.',
+    email_mismatch: 'Bu davet başka bir e-posta adresine gönderilmiş.',
+    already_member: 'Hesabınız zaten bir kuruma bağlı.',
+    not_allowed: 'Bu işlem için yetkiniz yok.',
+    invalid_email: 'Geçerli bir e-posta adresi girin.',
+    invalid_student: 'Seçilen öğrenci kaydı kullanılamıyor.',
+    too_many_pending: 'Bekleyen davet sınırına ulaşıldı. Önce eskileri iptal edin.'
+  };
+  var ROLES = { coach: 'Koç', student: 'Öğrenci' };
+  function show(id, visible) { $(id).classList.toggle('hidden', !visible); }
+  function fail(error) {
+    $('message').textContent = ERRORS[error && error.message] || 'İşlem tamamlanamadı. Daha sonra tekrar deneyin.';
+  }
+  function check(result) { if (result.error) throw result.error; return result.data; }
+  function option(select, value, text) {
+    var o = document.createElement('option'); o.value = value; o.textContent = text; select.appendChild(o);
+  }
+  var cfg = window.ADIMPLAN_CONFIG;
+  if (!window.supabase || !cfg) { $('status').textContent = 'Sayfa yüklenemedi. Bağlantınızı kontrol edip yenileyin.'; return; }
+  var sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+  var tenantId = null;
+
+  async function loadPending() {
+    var rows = check(await sb.rpc('list_invitations', { p_tenant_id: tenantId })) || [];
+    $('pending').textContent = '';
+    rows.forEach(function (row) {
+      var li = document.createElement('li'), text = document.createElement('span'), button = document.createElement('button');
+      text.textContent = row.email + ' · ' + ROLES[row.role] + ' · son gün ' + new Date(row.expires_at).toLocaleDateString('tr-TR');
+      button.type = 'button'; button.textContent = 'İptal et';
+      button.addEventListener('click', async function () {
+        $('message').textContent = '';
+        try { check(await sb.rpc('revoke_invitation', { p_id: row.id })); show('linkBox', false); await loadPending(); } catch (e) { fail(e); }
+      });
+      li.appendChild(text); li.appendChild(button); $('pending').appendChild(li);
+    });
+  }
+
+  async function loadStudents() {
+    var rows = check(await sb.from('students').select('id,full_name').eq('tenant_id', tenantId).is('user_id', null).order('full_name'));
+    $('inviteStudent').textContent = '';
+    option($('inviteStudent'), '', 'Yeni öğrenci kaydı oluştur');
+    rows.forEach(function (s) { option($('inviteStudent'), s.id, s.full_name); });
+  }
+
+  async function start() {
+    var token = sessionStorage.getItem('adimplan_invite');
+    var session = (await sb.auth.getSession()).data.session;
+    if (!session) {
+      sessionStorage.setItem('adimplan_next', 'davet.html');
+      $('status').textContent = token
+        ? 'Daveti kabul etmek için davet edilen e-posta adresiyle giriş yapın veya kayıt olun. E-posta doğrulaması yeni sekme açarsa, davet bağlantısına yeniden tıklayın.'
+        : 'Davet göndermek için hesabınızla giriş yapın.';
+      show('loginLink', true);
+      return;
+    }
+    if (token) {
+      $('title').textContent = 'Kurum Daveti';
+      $('status').textContent = session.user.email + ' hesabıyla daveti kabul edeceksiniz.';
+      show('accept', true); show('switchAccount', true);
+      return;
+    }
+    var member = check(await sb.from('memberships').select('tenant_id,role').eq('user_id', session.user.id).limit(1))[0];
+    if (!member || (member.role !== 'owner' && member.role !== 'coach')) {
+      $('status').textContent = member
+        ? 'Davet göndermeye yalnızca kurum sahibi ve koçlar yetkilidir.'
+        : 'Hesabınız bir kuruma bağlı değil. Davet aldıysanız davet bağlantısını açın.';
+      return;
+    }
+    tenantId = member.tenant_id;
+    $('title').textContent = 'Davet Gönder';
+    $('status').textContent = 'Davet, yalnızca yazdığınız e-posta adresiyle kabul edilebilir.';
+    option($('inviteRole'), 'student', ROLES.student);
+    if (member.role === 'owner') option($('inviteRole'), 'coach', ROLES.coach);
+    await loadStudents();
+    show('studentBox', true); show('inviteForm', true);
+    await loadPending();
+  }
+
+  $('inviteRole').addEventListener('change', function () { show('studentBox', this.value === 'student'); });
+  $('inviteForm').addEventListener('submit', async function (event) {
+    event.preventDefault();
+    $('message').textContent = ''; show('linkBox', false); $('create').disabled = true;
+    try {
+      var role = $('inviteRole').value;
+      var token = check(await sb.rpc('create_invitation', {
+        p_tenant_id: tenantId, p_email: $('inviteEmail').value, p_role: role,
+        p_student_id: role === 'student' ? ($('inviteStudent').value || null) : null
+      }));
+      $('inviteLink').value = location.origin + location.pathname + '#davet=' + token;
+      show('linkBox', true);
+      await loadPending();
+    } catch (e) { fail(e); } finally { $('create').disabled = false; }
+  });
+  $('copy').addEventListener('click', async function () {
+    try { await navigator.clipboard.writeText($('inviteLink').value); this.textContent = 'Kopyalandı'; }
+    catch (e) { $('inviteLink').select(); }
+  });
+  $('accept').addEventListener('click', async function () {
+    $('message').textContent = ''; this.disabled = true;
+    try {
+      var role = check(await sb.rpc('accept_invitation', { p_token: sessionStorage.getItem('adimplan_invite') }));
+      sessionStorage.removeItem('adimplan_invite');
+      show('accept', false); show('switchAccount', false);
+      $('status').textContent = 'Davet kabul edildi. Kuruma ' + ROLES[role].toLocaleLowerCase('tr-TR') + ' olarak katıldınız.';
+    } catch (e) {
+      if (e && e.message === 'invalid_invitation') sessionStorage.removeItem('adimplan_invite');
+      fail(e); this.disabled = false;
+    }
+  });
+  $('switchAccount').addEventListener('click', async function () {
+    await sb.auth.signOut({ scope: 'local' });
+    localStorage.removeItem('ivme_user');
+    sessionStorage.setItem('adimplan_next', 'davet.html');
+    location.href = './login.html';
+  });
+
+  start().catch(function (e) { $('status').textContent = ''; fail(e); });
+})();
+</script>
+</body>
+</html>
