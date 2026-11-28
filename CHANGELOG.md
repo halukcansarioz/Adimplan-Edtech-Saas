@@ -10,6 +10,12 @@ Bu dosya **İvme Akademi — Adımplan EdTech SaaS** projesindeki önemli sürü
 - **Veritabanı Migrasyonu:** Çift `006_` önek çakışmasını gidermek için `supabase/migrations/006_full_panels_rls.sql` dosyası `009_full_panels_rls.sql` olarak yeniden adlandırıldı.
 - **Docker Compose:** `backend` servisine opsiyonel `.env` yüklemesi ve `SUPABASE_URL`/`SUPABASE_ANON_KEY` ortam değişkenleri eklendi; `8080` portunda `frontend/` statik önizleme servisi (`python:3.11-slim`) tanımlandı.
   
+## [v2.4.1]
+
+### Düzeltmeler
+- "Dershane Kurumu" rolü artık "Bireysel Koç" olarak görünmüyor. Kuruma bağlı olmayan dershane hesabı girişte kurum başvurusu sayfasına yönlendirilir.
+- Service worker önbelleği `adimplan-pwa-v31` oldu.
+
 ## [v2.4.0]
 
 ### Eklenenler
