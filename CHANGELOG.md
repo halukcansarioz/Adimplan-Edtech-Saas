@@ -2,6 +2,11 @@
 
 Bu dosya **İvme Akademi — Adımplan EdTech SaaS** projesindeki önemli sürüm değişikliklerini içerir.
 
+## [v2.2.0]
+
+### Eklenenler
+- **Google ile Giriş:** Giriş sayfasına "Google ile devam et" düğmesi eklendi. İlk girişte rol seçimi ve KVKK onayı zorunludur. Düğme yalnızca Supabase'de Google sağlayıcısı açıkken görünür. Kurulum: `supabase/GOOGLE_LOGIN_SETUP.md`. Service worker önbelleği `adimplan-pwa-v25` oldu.
+
 ## [v2.1.1]
 
 ### Düzeltmeler
