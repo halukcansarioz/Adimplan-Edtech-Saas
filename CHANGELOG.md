@@ -14,7 +14,7 @@ Bu dosya **İvme Akademi — Adımplan EdTech SaaS** projesindeki önemli sürü
 
 ### Düzeltmeler
 - "Dershane Kurumu" rolü artık "Bireysel Koç" olarak görünmüyor. Kuruma bağlı olmayan dershane hesabı girişte kurum başvurusu sayfasına yönlendirilir.
-- Şifreyle girişte e-posta ön eki yerine kayıtlı ad soyad gösterilir. Service worker önbelleği `adimplan-pwa-v31` oldu.
+- Service worker önbelleği `adimplan-pwa-v31` oldu.
 
 ## [v2.4.0]
 

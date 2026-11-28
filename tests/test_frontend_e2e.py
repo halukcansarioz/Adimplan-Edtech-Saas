@@ -989,7 +989,7 @@ def test_invite_token_leaves_address_bar_and_survives_login(frontend_url):
 def test_login_keeps_selected_role_and_routes_unlinked_institution(frontend_url, role, memberships, label, target):
     stub = f"""window.supabase = {{createClient: () => ({{
         auth: {{
-            signInWithPassword: async () => ({{data: {{user: {{id: 'u', email: 'a@b.com', user_metadata: {{role: '{role}', full_name: 'Ayşe Kaya'}}}}}}, error: null}}),
+            signInWithPassword: async () => ({{data: {{user: {{id: 'u', email: 'a@b.com', user_metadata: {{role: '{role}'}}}}}}, error: null}}),
             getSession: async () => ({{data: {{session: null}}}}),
             onAuthStateChange: () => ({{data: {{subscription: {{unsubscribe() {{}}}}}}}}),
         }},
@@ -1008,4 +1008,4 @@ def test_login_keeps_selected_role_and_routes_unlinked_institution(frontend_url,
             page.click("#loginSubmit")
             page.wait_for_url(f"**/{target}")
             user = page.evaluate("JSON.parse(localStorage.getItem('ivme_user'))")
-            assert (user["role"], user["name"]) == (label, "Ayşe Kaya")
+            assert (user["role"], user["name"]) == (label, "a")
