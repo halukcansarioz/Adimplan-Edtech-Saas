@@ -1,4 +1,4 @@
-const CACHE_NAME = 'adimplan-pwa-v28';
+const CACHE_NAME = 'adimplan-pwa-v29';
 const PRECACHE_URLS = [
   './', './index.html',
   './login.html',
@@ -6,6 +6,7 @@ const PRECACHE_URLS = [
   './admin.html',
   './manifest.json',
   './super-admin.html',
+  './kurum-basvuru.html',
   './404.html',
   './coach-modules.js?v=5',
   './admin-auth.js?v=1',

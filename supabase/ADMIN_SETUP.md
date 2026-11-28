@@ -39,3 +39,11 @@ select t.id, p.id, 'owner' from t, p;
 
 Yetkiyi geri almak için ilgili `memberships` satırını silin veya
 `platform_admin` alanını kaldırın.
+
+## Kurum başvuruları
+
+`migrations/010_organization_requests.sql` uygulandıktan sonra koçlar
+`/kurum-basvuru.html` sayfasından başvurur. Başvurular `/super-admin.html`
+içindeki **Kurum Başvuruları** sekmesinden onaylanır; bunun için hesabınızda
+`platform_admin` yetkisi bulunmalıdır (yukarıdaki 2. adım). Onay, kurumu
+oluşturur ve başvuranı `owner` yapar.
