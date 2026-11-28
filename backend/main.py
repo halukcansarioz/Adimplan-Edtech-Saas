@@ -1,5 +1,6 @@
 import hashlib
 import json
+import logging
 import os
 import time
 import urllib.error
@@ -18,6 +19,7 @@ try:
     from optical_parser import parse_optical_csv
 except ImportError:
     from backend.optical_parser import parse_optical_csv
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Adimplan EdTech Analytics API", version="1.4.0")
 try:
@@ -521,7 +523,8 @@ def notify_parent_email(request: Request, payload: ParentEmailRequest):
         detail = exc.read().decode("utf-8", errors="ignore")
         raise HTTPException(status_code=502, detail=f"Resend API hatasi: {detail}")
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"E-posta gonderim hatasi: {str(exc)}")
+        logger.exception("E-posta gonderim hatasi")
+        raise HTTPException(status_code=502, detail="E-posta gonderimi sirasinda bir hata olustu.")
 
 SUBSCRIPTION_PLAN_LIMITS = {
     "trial": 5,
