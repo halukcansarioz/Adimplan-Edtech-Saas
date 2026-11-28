@@ -891,3 +891,20 @@ def test_google_button_follows_supabase_provider_setting(frontend_url, google_en
             options = page.evaluate("window.__oauth")
             assert options["provider"] == "google"
             assert options["options"]["redirectTo"] == f"{frontend_url}/login.html"
+
+
+def test_student_sections_are_inside_main_and_toolbar_collapses(frontend_url):
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            context = _offline_context(browser)
+            context.add_init_script(SIGNED_IN)
+            page = context.new_page()
+            page.goto(f"{frontend_url}/student.html")
+            assert page.locator("section.section-view").count() > 0
+            assert page.locator("main section.section-view").count() == page.locator("section.section-view").count()
+            toggle = page.locator("#adimplan-student-live-toggle")
+            pomodoro = page.get_by_text("+25 dk Pomodoro Kaydet")
+            toggle.click()
+            assert not pomodoro.is_visible()
+            toggle.click()
+            assert pomodoro.is_visible()

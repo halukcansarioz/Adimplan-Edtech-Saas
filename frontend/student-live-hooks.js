@@ -235,6 +235,20 @@
     bar.appendChild(btnPomodoro);
     bar.appendChild(btnQuestion);
     bar.appendChild(btnSync);
+
+    // Çubuk içeriğin üstünde durduğu için küçültülebilir.
+    var btnToggle = makeBtn('Gizle', 'transparent');
+    btnToggle.id = 'adimplan-student-live-toggle';
+    btnToggle.setAttribute('aria-expanded', 'true');
+    var tools = [label, btnPomodoro, btnQuestion, btnSync];
+    var displays = tools.map(function (el) { return el.style.display; });
+    btnToggle.addEventListener('click', function () {
+      var open = btnToggle.getAttribute('aria-expanded') !== 'true';
+      tools.forEach(function (el, i) { el.style.display = open ? displays[i] : 'none'; });
+      btnToggle.setAttribute('aria-expanded', String(open));
+      btnToggle.textContent = open ? 'Gizle' : 'Hızlı Araçlar';
+    });
+    bar.appendChild(btnToggle);
     document.body.appendChild(bar);
   }
 

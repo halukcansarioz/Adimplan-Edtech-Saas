@@ -2,6 +2,11 @@
 
 Bu dosya **İvme Akademi — Adımplan EdTech SaaS** projesindeki önemli sürüm değişikliklerini içerir.
 
+## [v2.2.1]
+
+### Düzeltmeler
+- **Öğrenci Paneli Yerleşimi:** Dosyanın sonuna kaymış `<main>` etiketi yerine alındı; içerik artık ana alanda. Hızlı araç çubuğu küçültülebiliyor ve sayfa sonunda içeriği kapatmıyor. Service worker önbelleği `adimplan-pwa-v26` oldu.
+
 ## [v2.2.0]
 
 ### Eklenenler
