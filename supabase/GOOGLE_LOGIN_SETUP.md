@@ -20,4 +20,6 @@ Giriş sayfasındaki düğme, aşağıdaki ayar tamamlanana kadar görünmez.
 
 ## 3. Kontrol
 Giriş sayfasını yenileyin, "Google ile devam et" ile giriş yapın.
-İlk kez Google ile gelen kullanıcı "Bireysel Koç" arayüzüyle açılır.
+İlk kez Google ile gelen kullanıcı, panele geçmeden önce rol seçer ve KVKK
+onayı verir. Rol ve onay zamanı kullanıcı bilgisine (`user_metadata`) yazılır.
+Supabase hesabı, bu adımdan önce Google dönüşünde oluşur.
