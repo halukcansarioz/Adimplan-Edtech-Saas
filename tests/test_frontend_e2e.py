@@ -976,3 +976,36 @@ def test_invite_token_leaves_address_bar_and_survives_login(frontend_url):
             assert token not in page.url
             assert page.evaluate("sessionStorage.getItem('adimplan_invite')") == token
             assert page.evaluate("sessionStorage.getItem('adimplan_next')") == "davet.html"
+
+
+@pytest.mark.parametrize(
+    "role, memberships, label, target",
+    [
+        ("Dershane Kurumu", "[]", "Dershane Kurumu", "kurum-basvuru.html"),
+        ("Dershane Kurumu", "[{role: 'owner'}]", "Dershane Kurumu", "app.html"),
+        ("Bireysel Koç", "[]", "Bireysel Koç", "app.html"),
+    ],
+)
+def test_login_keeps_selected_role_and_routes_unlinked_institution(frontend_url, role, memberships, label, target):
+    stub = f"""window.supabase = {{createClient: () => ({{
+        auth: {{
+            signInWithPassword: async () => ({{data: {{user: {{id: 'u', email: 'a@b.com', user_metadata: {{role: '{role}', full_name: 'Ayşe Kaya'}}}}}}, error: null}}),
+            getSession: async () => ({{data: {{session: null}}}}),
+            onAuthStateChange: () => ({{data: {{subscription: {{unsubscribe() {{}}}}}}}}),
+        }},
+        from: () => {{ const q = {{select: () => q, eq: () => q, limit: async () => ({{data: {memberships}}})}}; return q; }},
+    }})}};"""
+    with sync_playwright() as p:
+        with p.chromium.launch() as browser:
+            page = browser.new_context(service_workers="block").new_page()
+            page.route(lambda u: not u.startswith("http://127.0.0.1"), lambda r: r.abort())
+            page.route("**/cdn.jsdelivr.net/**", lambda r: r.fulfill(body=stub, content_type="application/javascript"))
+            # Hedef sayfanın kendi betikleri sonucu değiştirmesin.
+            page.route(f"**/{target}", lambda r: r.fulfill(body="<p>hedef</p>", content_type="text/html"))
+            page.goto(f"{frontend_url}/login.html")
+            page.fill("#loginEmail", "a@b.com")
+            page.fill("#loginPassword", "Parola123!")
+            page.click("#loginSubmit")
+            page.wait_for_url(f"**/{target}")
+            user = page.evaluate("JSON.parse(localStorage.getItem('ivme_user'))")
+            assert (user["role"], user["name"]) == (label, "Ayşe Kaya")
