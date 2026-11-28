@@ -1,8 +1,9 @@
 (function(){
 'use strict';
 var path=window.location.pathname||'/';
-var search=window.location.search||'';
-var hash=window.location.hash||'';
+var initial=window.__adimplanAuthUrl||window.location;
+var search=initial.search||'';
+var hash=initial.hash||'';
 var q=new URLSearchParams(search);
 var h=new URLSearchParams(hash.replace(/^#/,''));
 var hasAuthParams=q.has('code')||q.has('token_hash')||h.has('access_token')||h.has('error')||q.has('error');
@@ -34,6 +35,7 @@ if(/invalid/i.test(raw))return 'Geçersiz veya daha önce kullanılmış doğrul
 return desc?('İşlem tamamlanamadı: '+desc):'Kimlik doğrulama işlemi tamamlanamadı.';
 }
 function getClient(){
+if(window.__adimplanAuthClient)return window.__adimplanAuthClient;
 var cfg=window.ADIMPLAN_CONFIG||window.__CONFIG__||window.CONFIG||{};
 var url=window.SUPABASE_URL||cfg.supabaseUrl||cfg.SUPABASE_URL||'';
 var key=window.SUPABASE_ANON_KEY||cfg.supabaseAnonKey||cfg.SUPABASE_ANON_KEY||'';

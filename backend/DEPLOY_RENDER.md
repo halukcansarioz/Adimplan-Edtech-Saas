@@ -8,6 +8,8 @@
 2. Değişkenler:
    - `SUPABASE_URL`, `SUPABASE_ANON_KEY`: değerleri `render.yaml` içindedir.
    - `RESEND_API_KEY`: yalnızca gerçek e-posta gönderilecekse, panelden girin.
+   - `RESEND_FROM_EMAIL`: Resend'de doğrulanmış alan adınıza ait gönderen adresi.
+     Doğrulanmamış bir alan adından gönderim reddedilir.
    - `ALLOWED_ORIGINS`: ön yüz farklı bir alan adındaysa o adresleri virgülle yazın
      (varsayılan listenin yerine geçer).
 3. Kontrol: `https://<servis-adresi>/health` yanıt vermelidir.

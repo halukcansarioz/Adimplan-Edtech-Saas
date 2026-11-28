@@ -16,6 +16,9 @@ services:
       # Gizli değer: depoya yazılmaz, Render panelinden girilir. Boşsa e-posta gönderilmez (dry run).
       - key: RESEND_API_KEY
         sync: false
+      # Resend'de doğrulanmış alan adına ait gönderen, ör. "Adimplan <bildirim@alanadiniz.com>"
+      - key: RESEND_FROM_EMAIL
+        sync: false
   - type: web
     name: adimplan-web
     runtime: static
